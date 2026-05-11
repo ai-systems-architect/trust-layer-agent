@@ -186,3 +186,114 @@ The dissemination boundary governs interaction with any system outside the agent
 | Agent ↔ Retrieval | Knowledge in | Evidence lineage requirements | Hallucinated assertion |
 | Agent ↔ Output | Assertion out | Human gate + approval token | Unauthorized submission |
 | Agent ↔ External System | Dissemination out | Implicit DENY on unregistered tools | Data exfiltration |
+
+---
+
+## 3. Agent Identity and Delegated Authority
+
+### 3.1 The Identity Problem in Agentic Systems
+
+A human user authenticates once and operates under a persistent, auditable identity. An agentic AI system operates differently — it executes actions across multiple steps, potentially calling multiple tools, under an identity that was delegated to it by a human principal at run initiation.
+
+Without explicit identity constraints, three failure modes emerge:
+
+**Privilege accumulation** — the agent acquires permissions beyond what the task requires, either through broad role assignment or through tool calls that expand its effective access.
+
+**Impersonation ambiguity** — the audit trail shows actions taken by a service role, with no traceable connection to the human principal who initiated the run and the specific task scope that was authorized.
+
+**Credential persistence** — long-lived credentials remain valid after the agent run completes, creating an attack surface with no active owner.
+
+This section specifies how agent identity is established, constrained, and audited in this framework.
+
+---
+
+### 3.2 Execution Identity
+
+Every agent run executes under a declared execution identity. The identity is established at run initiation and cannot be elevated during execution.
+
+**Declared execution identity for this implementation:**
+
+```yaml
+execution_identity:
+  iam_role: "audit-readonly-role"
+  privilege_scope: "read-only"
+  credential_source: "short-lived-session"
+  impersonation_allowed: false
+```
+
+**Constraints enforced:**
+
+| Constraint | Implementation |
+|---|---|
+| Least privilege | Role scoped to read-only IAM and CloudTrail operations — no write path exists at the role level |
+| Short-lived credentials | Session tokens with a maximum validity of 1 hour — no persistent credentials in agent runtime |
+| No privilege escalation | `iam:AssumeRole` for any role beyond `audit-readonly-role` is not in the trust ledger — attempt is DENIED |
+| No impersonation | Agent cannot act as a human user or assume a human user's identity |
+
+---
+
+### 3.3 Delegated Authority Boundaries
+
+Delegated authority is the subset of the execution identity's permissions that the agent is authorized to exercise for a specific run. It is narrower than the role's full permission set and is declared explicitly at invocation.
+
+**Authority is bounded by three constraints applied in order:**
+
+1. **Role boundary** — what the IAM role is permitted to do at the AWS policy level
+2. **Trust ledger boundary** — what tools are registered and what actions each tool is permitted to invoke
+3. **Run scope boundary** — what control family and account scope were declared at run initiation
+
+An action must clear all three constraints to execute. A tool registered in the trust ledger but outside the declared run scope is rejected at the pre-call PEP gate even if the IAM role technically permits it.
+
+**Example — authority chain for `query_iam_policies`:**
+
+```
+IAM role permits:        iam:GetPolicy, iam:GetPolicyVersion, iam:ListAttachedRolePolicies
+Trust ledger permits:    same three actions, max 20 calls per run
+Run scope declared:      AC family, account-id 123456789
+Pre-call PEP validates:  query target is within account-id 123456789
+Result:                  PERMITTED
+```
+
+```
+IAM role permits:        iam:GetPolicy (read-only role)
+Trust ledger permits:    same
+Run scope declared:      AC family, account-id 123456789
+Agent attempts:          iam:CreatePolicy (not in trust ledger allowed_actions)
+Result:                  DENIED at pre-call PEP — logged and alerted
+```
+
+---
+
+### 3.4 Audit Trail Requirements
+
+Every agent run produces an audit trail that connects the human principal, the delegated authority, and every action taken under that authority.
+
+**Required audit trail elements:**
+
+| Element | Source | Retention |
+|---|---|---|
+| Run ID | Generated at invocation | 365 days |
+| Initiating principal | Human user ID passed at invocation | 365 days |
+| Declared execution identity | Trust ledger `execution_identity` block | 365 days |
+| Declared run scope | Control family + account scope | 365 days |
+| Every tool invocation | Pre-call PEP log entry | 365 days |
+| Every PEP outcome | Pre-call and post-call gate result | 365 days |
+| Every DENIED attempt | Alert log + run termination record | 365 days |
+| Governance decision record | `governance_decision.json` per HUMAN_GATED call | 2555 days |
+
+The audit trail is write-once. No agent tool is registered with permissions to modify or delete audit log entries.
+
+---
+
+### 3.5 What This Framework Does Not Implement
+
+This framework specifies agent identity and delegated authority at the application layer. It does not implement or replace:
+
+| Capability | Responsible Layer |
+|---|---|
+| IAM role creation and policy attachment | Platform / infrastructure layer |
+| Session token issuance | AWS STS — platform layer |
+| Centralized identity provider integration | Agency IdAM platform |
+| Cross-account role assumption governance | Platform layer — out of scope for single-account reference implementation |
+
+The inheritance pattern for platform vs. application responsibility is addressed in Section 10.
