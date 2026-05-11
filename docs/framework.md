@@ -297,3 +297,145 @@ This framework specifies agent identity and delegated authority at the applicati
 | Cross-account role assumption governance | Platform layer — out of scope for single-account reference implementation |
 
 The inheritance pattern for platform vs. application responsibility is addressed in Section 10.
+
+---
+
+## 4. Tool-Use Governance and Policy Enforcement Points
+
+### 4.1 The Tool-Use Problem in Agentic Systems
+
+Tools are the mechanism by which an agentic AI system affects the world. A tool call is not a suggestion — it is an action with real consequences: data is read, records are written, artifacts are submitted, external systems are notified. The governance question is not whether the agent can call a tool but whether it is authorized to, under what conditions, and with what constraints on inputs and outputs.
+
+Three failure patterns are specific to tool use in agentic systems:
+
+**Unbounded invocation** — no limit on how many times a tool can be called per run, enabling runaway loops that exhaust resources or produce redundant audit entries.
+
+**Unsanitized tool results** — tool output is passed directly into agent reasoning state without validation, creating an injection vector if the result contains adversarial content.
+
+**Implicit permission inheritance** — the agent assumes that because it can call a tool, it is authorized to call it with any parameters, against any target, any number of times.
+
+This framework addresses all three through the trust ledger and policy enforcement points.
+
+---
+
+### 4.2 Tool Registration Requirements
+
+Every tool the agent may invoke must be registered in `config/trust_ledger.yaml` before use. Registration is not optional — it is the governance control.
+
+**The implicit DENY rule:** Any tool invocation request for a tool not present in the trust ledger is rejected at the pre-call PEP gate, logged, and the run is terminated. There is no fallback, no exception path, and no runtime override.
+
+**Required registration fields per tool:**
+
+| Field | Purpose |
+|---|---|
+| `tool_id` | Unique identifier — referenced in audit trail and governance decision records |
+| `tool_name` | Human-readable name — must match the function name exposed to the agent |
+| `risk_tier` | LOW / MEDIUM / HIGH / CRITICAL — determines approval requirements and logging |
+| `autonomy_class` | AUTONOMOUS / HUMAN_GATED / DENIED |
+| `human_review_required` | Whether output must be reviewed before downstream consumption |
+| `evidence_lineage_required` | Whether tool results must carry source URI, retrieval timestamp, and evidence hash |
+| `allowed_actions` | Explicit allowlist of IAM actions or API operations the tool may invoke |
+| `prohibited_actions` | Explicit denylist — enforced at the role level and at the pre-call PEP gate |
+| `data_classifications_allowed` | Maximum data classification the tool may process |
+| `policy_enforcement_points` | Named handlers for pre-call and post-call gates |
+| `max_calls_per_run` | Hard ceiling on invocations per run — circuit breaker |
+| `timeout_seconds` | Maximum execution time before the call is terminated |
+| `audit_retention_days` | Minimum retention period for all records associated with this tool |
+
+---
+
+### 4.3 Policy Enforcement Points
+
+Policy enforcement points (PEPs) are explicit checkpoints where governance controls are applied. This framework defines two PEPs per tool call and one PEP at the output boundary.
+
+#### PEP-1 — Pre-Call Validation
+
+Applied before every tool invocation. The pre-call gate answers one question: is this invocation authorized under the current run's declared scope, trust ledger entry, and execution identity?
+
+**Pre-call checks applied in order:**
+
+1. **Tool registration check** — is the tool present in the trust ledger? If not: DENY, log, terminate run.
+2. **Autonomy class check** — is the tool AUTONOMOUS, HUMAN_GATED, or DENIED?
+   - AUTONOMOUS: proceed to scope check
+   - HUMAN_GATED: is a valid approval token present? If not: block and request approval
+   - DENIED: reject, log, alert, terminate run
+3. **Scope bounds check** — do the invocation parameters fall within the declared run scope (control family, account ID)?
+4. **Call count check** — has `max_calls_per_run` been reached? If so: DENY and log.
+5. **Prohibited action check** — does the invocation attempt any action on the tool's `prohibited_actions` list? If so: DENY, log, alert.
+6. **Data classification check** — does the input data exceed the tool's `data_classifications_allowed` level? If so: DENY and log.
+
+All six checks must pass. Failure at any check terminates the invocation.
+
+#### PEP-2 — Post-Call Sanitization
+
+Applied after every tool invocation, before results enter agent reasoning state. The post-call gate answers one question: is this result safe to pass to the agent's next reasoning step?
+
+**Post-call checks applied in order:**
+
+1. **Evidence lineage validation** — if `evidence_lineage_required: true`, does the result carry `source_uri`, `retrieval_timestamp`, and `evidence_hash`? If not: strip result, log lineage failure, agent receives an empty result with a lineage error flag.
+2. **PII scan** — does the result contain personally identifiable information? If detected: redact before passing to reasoning state.
+3. **Injection pattern scan** — does the result contain instruction-like content that could alter agent behavior? If detected: sanitize and flag for human review.
+4. **Result size check** — does the result exceed the declared maximum context injection size? If so: truncate and log.
+
+#### PEP-3 — Pre-Output Release
+
+Applied before the agent produces its final output artifact. This PEP operates at the run level, not the tool level.
+
+**Pre-output checks:**
+
+1. **Evidence completeness check** — does every compliance assertion in the draft assessment trace to at least one evidence source with valid lineage?
+2. **Sufficiency assessment** — has the agent explicitly assessed whether collected evidence is sufficient to support each control determination?
+3. **Human review flag** — are any MEDIUM or higher risk tier tool results present in the evidence set? If so: flag output for human review regardless of autonomy class.
+4. **Submission gate** — if the run includes a `submit_assessment_artifact` call: confirm HUMAN_GATED approval token is present before allowing the output to proceed.
+
+---
+
+### 4.4 Circuit Breakers
+
+Circuit breakers are hard stops that terminate a run when operational bounds are exceeded. They are not error handlers — they are governance controls that prevent a malfunctioning agent from causing unbounded harm.
+
+| Circuit Breaker | Trigger | Action |
+|---|---|---|
+| Max calls per tool | `max_calls_per_run` reached for any tool | Terminate run, log, surface partial results |
+| Max total steps | Global step limit exceeded (default: 50) | Terminate run, log, flag for human review |
+| Tool timeout | Single tool call exceeds `timeout_seconds` | Cancel call, log timeout, agent receives error result |
+| Consecutive tool failures | Three consecutive tool call failures | Terminate run, log, alert |
+| Reasoning loop detection | Same tool called with identical parameters twice in sequence | Terminate run, log loop detection event |
+
+Circuit breaker events are surfaced in the governance decision record and in Langfuse observability traces.
+
+---
+
+### 4.5 Evidence Lineage
+
+Evidence lineage is the chain of custody for every factual claim the agent makes in its output artifact. It is enforced at PEP-2 (post-call sanitization) and validated at PEP-3 (pre-output release).
+
+**Required lineage fields per evidence item:**
+
+```json
+{
+  "source_uri": "s3://audit-evidence/ac-2/iam-policy-scan-R1042.json",
+  "retrieval_timestamp": "2026-05-11T13:18:02Z",
+  "evidence_hash": "sha256:a3f1c9...",
+  "tool_id": "T-001",
+  "run_id": "R-1042"
+}
+```
+
+An assessment assertion without a traceable evidence lineage record is a governance finding, not an agent output. The run does not fail — but the assertion is flagged as unsubstantiated and excluded from the draft assessment pending human review.
+
+---
+
+### 4.6 Trust Ledger Maintenance
+
+The trust ledger is a governance artifact, not a configuration file. It is subject to the following maintenance requirements:
+
+| Requirement | Cadence |
+|---|---|
+| Full review of all registered tools | Quarterly or when a new tool is added |
+| Risk tier re-assessment | When the threat model is updated |
+| Prohibited actions list update | When new IAM actions are introduced or attack patterns identified |
+| Schema version bump | When any field definition changes |
+| Reviewed-by field update | After every review — name and date |
+
+Tool additions require a corresponding decision log entry documenting the rationale for the assigned risk tier and autonomy class.
