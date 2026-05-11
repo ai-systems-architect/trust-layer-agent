@@ -1,4 +1,4 @@
-# Agentic AI Governance Framework for Federal Compliance Workflows
+# Governance Framework — The Trust Layer for Federal Agentic AI
 
 **Status:** Drafting (Phase 1).
 **Version:** 0.1.0-draft.

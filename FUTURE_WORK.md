@@ -1,41 +1,27 @@
 # Future Work
 
-Scope deliberately deferred from this project. Each item below is documented to
-signal that it has been considered and intentionally excluded — not overlooked.
+Scope deliberately deferred from this project. Each item below is documented to signal that it has been considered and intentionally excluded — not overlooked.
 
-## Multi-control coverage (Phase 6)
+### Production Required
 
-Extend from the AC-family demonstration to AU (audit logging), IA (identification
-and authentication), and CM (configuration management). The framework is
-control-family-agnostic; AC was selected as the demonstration family because it
-touches every federal system and is universally relevant. Extension follows the
-pattern documented in `docs/framework.md`.
+**Real telemetry integration.** The agent operates against synthetic IAM policies and CloudTrail event fixtures. Connecting to real AWS IAM, real CloudTrail, and real ticketing systems requires production AWS account permissions, sample-data handling agreements, and a security review that exceeds portfolio scope. The integration pattern is documented in `docs/framework.md`; the wiring is intentionally not built. Required when this codebase is adopted for any real federal program. Trigger: a sponsoring program with the necessary authorities and a target environment.
 
-## Real telemetry integration (Phase 7)
+**Identity and delegated authority — mocked → wired.** The framework specifies agent identity, scoped credentials, and impersonation prevention. The trust ledger declares the execution identity (`audit-readonly-role`, short-lived session credentials, impersonation disallowed) at the schema layer. A mocked role-assumption flow is in scope for Phase 2; wiring it to a real IAM role with STS session issuance is production work, not portfolio work.
 
-Connecting the agent to real CloudTrail, real IAM, and real ticketing systems.
-Requires production AWS permissions, sample data handling, and security review
-that exceeds portfolio scope. The integration pattern is documented in the
-framework; the wiring is not built.
+### Stretch
 
-## Multi-agent extension
+**Multi-control coverage.** Extend the agent from the AC-family demonstration to AU (audit logging), IA (identification and authentication), and CM (configuration management). The framework is control-family-agnostic; AC was selected as the demonstration family because it touches every federal system and the failure modes are visible to non-specialist reviewers. Extension follows the pattern documented in `docs/framework.md`. Each additional family is roughly the same effort as the original AC implementation.
 
-Planner-executor patterns, agent-to-agent messaging, and multi-agent orchestration
-governance. This is the subject of a separate project (P4 in the portfolio arc)
-and is deliberately not added to this single-agent demonstration.
+**Enterprise framework mappings.** Translate the federal mappings (NIST AI RMF, OMB M-24-10 / M-25-21, FedRAMP, 800-53) to: **SR 11-7** (banking model risk management), **HIPAA Security Rule** (health information audit workflows), **SOC 2 Type II** (evidence collection), and **ISO 27001 / 42001** (internal audit and AI management system). These translations are written work — articles that cite this codebase as the substrate — not additional code in this repository.
 
-## Continuous monitoring (Phase 9)
+**Continuous monitoring agent variant.** Apply the same governance framework to a runtime ConMon agent rather than a periodic assessment agent. Same trust ledger pattern, different PEP behavior (streaming vs. batch), different reasoning trace cadence (every detection vs. every assessment). Documented as a pattern extension; reference implementation deferred.
 
-Applying the same governance framework to runtime ConMon agents rather than
-periodic assessment. Same pattern, different cadence and PEP behavior.
+**Operational observability dashboards.** Phase 3 captures input tokens, state transition latency, tool call frequency, and cache hit rates per run. Building a hosted dashboard surface over that data (Grafana over Langfuse, or similar) is a separate engineering exercise. The instrumentation is the load-bearing part; the dashboard is presentation.
 
-## Enterprise framework mappings (Phase 10)
+### Considered and Deferred
 
-Translating the federal mappings (NIST AI RMF, OMB, FedRAMP, 800-53) to:
+**Multi-agent orchestration governance.** Planner-executor patterns, agent-to-agent messaging, and multi-agent state synchronization governance are deliberately out of scope for this project. The single-agent constraint is what makes this codebase tractable and what makes the P3 → P4 portfolio progression coherent. Multi-agent governance is the subject of a separate project (P4) in this portfolio arc, not an extension of this one.
 
-- **SR 11-7** — banking model risk management.
-- **HIPAA Security Rule** — health information audit workflows.
-- **SOC 2** — Type II evidence collection.
-- **ISO 27001 / 42001** — internal audit and AI management system.
+**Self-correction loop.** Re-attempt evidence collection with a broadened search radius when the sufficiency-assessment state determines evidence is incomplete. Evaluated and deferred for the single-agent case: the human-gated review at `awaiting-human-review` provides the correctness floor, and the re-attempt pattern is more appropriate for multi-agent workflows where one agent's confidence judgment feeds another agent's next action. Reconsider in P4.
 
-These translations are written work (articles), not additional code.
+**Direct LLM SDK orchestration vs. LangGraph.** LangGraph is currently the candidate orchestration framework; a hand-rolled state machine over the model SDK directly is the alternative. The framework choice is captured as a pending entry in `docs/decision_log.md` and will be logged when made. Hand-rolled would maximize auditability and minimize lock-in but costs implementation time that LangGraph absorbs. The decision turns on whether LangGraph's reasoning trace integrates cleanly enough with the framework's reasoning-trace requirements.
