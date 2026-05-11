@@ -1,139 +1,188 @@
-# Governance Framework — The Trust Layer for Federal Agentic AI
+# Beyond Autonomy: Architecting the Trust Layer for Enterprise Agentic AI
+## Governance Framework for Autonomous AI Systems in Federal and Enterprise Environments
 
-**Status:** Drafting (Phase 1).
-**Version:** 0.1.0-draft.
-**Scope:** Governance pattern for autonomous, multi-step AI agents performing federal
-compliance work. Demonstrated against NIST 800-53 Rev 5 Access Control evidence
-collection; pattern is control-family-agnostic.
-
----
-
-> This document is the consulting deliverable. The agent under `src/` is the
-> demonstration that the pattern works. Sections below are placeholders for the
-> Phase 1 build — to be filled in order. Each section header is a commitment to
-> address that topic before Phase 1 closes.
-
-## 1. Scope and applicability
-
-What this framework governs (agentic systems with tool use, persistent state across
-steps, and non-deterministic reasoning) vs. what it does not (single-shot LLM calls,
-classical ML inference, deterministic automation).
-
-## 2. Trust boundary taxonomy
-
-The three-class partition that every action falls into:
-
-- **Autonomous actions** — agent may take without prior human approval.
-- **Human-approved actions** — agent must request approval, present rationale, and
-  wait for an explicit affirmative.
-- **Prohibited actions** — agent must not take under any condition; PEPs enforce.
-
-## 3. Tool-use governance
-
-Tool registration, allowlisting, schema requirements, audit hooks, and the binding
-between each tool and its trust class. The **trust ledger** (a versioned config
-artifact in the repo) is the source of truth.
-
-### 3.1 Trust ledger schema
-
-To be drafted. Candidate fields: `tool_name`, `autonomy_class`, `required_approver_role`,
-`pep_pre_handler`, `pep_post_handler`, `audit_retention_days`, `data_classifications_allowed`.
-
-## 4. Reasoning trace requirements
-
-What must be captured at every state transition and every tool call, retention
-duration, access controls on the trace store, and the minimum trace fidelity
-required to reconstruct an agent run for after-the-fact audit.
-
-## 5. Policy Enforcement Points (PEPs)
-
-Three named checkpoints:
-
-1. **Pre-tool-call validation** — argument inspection, authority check, trust-class
-   gate against the ledger.
-2. **Post-tool-call sanitization** — output inspection for sensitive data, injected
-   instructions, schema violations.
-3. **Pre-output release review** — final assessment artifact gated against the
-   trust ledger and (where required) human approval.
-
-## 6. Failure mode catalog
-
-Operational and adversarial failure modes the framework anticipates. Each entry
-specifies the failure, how PEPs / reasoning traces detect it, and the expected
-agent response.
-
-Initial candidates:
-
-- Hallucinated progress (agent claims an evidence source was checked when it was not).
-- Infinite reasoning loops / non-convergence.
-- Tool misuse (correct tool called with semantically wrong arguments).
-- Prompt injection via retrieved evidence content.
-- Cascading errors across agent steps (early bad inference poisons later state).
-- Confused-deputy: agent persuaded to use its delegated authority on behalf of
-  an unauthorized requester.
-- Tool result contradicts prior reasoning — does the agent update or anchor?
-
-## 7. Threat model
-
-Adversary classes and their capabilities. Out-of-scope adversaries are explicit.
-Includes: insider misuse, compromised retrieval corpus, prompt injection in
-ingested evidence, agent-as-confused-deputy.
-
-## 8. Agent identity and delegated authority
-
-Which IAM role the agent runs as, how its authority is bounded, how scoped
-credentials are issued, and how impersonation is prevented. Zero-trust alignment.
-
-## 9. Data classification handling
-
-How the agent recognizes and refuses to process inputs above its authorized
-classification level. Ledger binding for classification-allowed-set per tool.
-
-## 10. Evaluation methodology
-
-The three-tier grader strategy:
-
-- **Code-based graders** — deterministic assertions (refusal fired, citation present,
-  PEP blocked the action).
-- **LLM-as-judge** — qualitative grading where determinism is wrong (was a hedge
-  justified given the compliance context?).
-- **Human review** — edge cases, high-stakes outputs, and disagreements between
-  the first two tiers.
-
-## 11. Agent risk classification matrix
-
-| Risk tier | Example | Autonomy allowed | Human approval |
-|-----------|---------|------------------|----------------|
-| Low       | TBD     | TBD              | TBD            |
-| Moderate  | TBD     | TBD              | TBD            |
-| High      | TBD     | TBD              | TBD            |
-| Critical  | TBD     | TBD              | TBD            |
-
-Aligns with OMB / NIST impact-based language.
-
-## 12. Mapping to federal frameworks
-
-- **NIST AI RMF** — Govern / Map / Measure / Manage alignment.
-- **NIST AI 600-1** — Generative AI profile coverage and the agentic extensions
-  not yet codified.
-- **OMB M-24-10 / M-25-21** — use case inventory, risk assessment, minimum practices.
-- **FedRAMP** — ConMon implications for agent-driven assessment.
-- **NIST 800-53 Rev 5** — AC, AU, CA, RA, SI family touchpoints.
-
-## 13. Inheritance pattern
-
-What an agency platform provides (identity, logging substrate, key management,
-network controls) vs. what the application provides (trust ledger, PEPs,
-reasoning trace store, eval harness).
-
-## 14. Versioning and revision
-
-How this framework is versioned, how mappings to underlying federal guidance are
-updated as that guidance evolves, and the deprecation pathway for superseded
-sections.
+**Version:** 1.0
+**Last Updated:** 2026-05-11
+**Status:** In Progress
 
 ---
 
-## Appendix A — Worked failure examples
+## Table of Contents
 
-(Populated in Phase 3 from real agent runs.)
+1. Scope and Applicability
+2. Trust Boundary Taxonomy
+3. Agent Identity and Delegated Authority
+4. Tool-Use Governance and Policy Enforcement Points
+5. Failure Mode Catalog
+6. Threat Model
+7. Agent Risk Classification Matrix
+8. Evaluation Methodology
+9. Regulatory Mapping
+10. Inheritance Pattern
+
+---
+
+## 1. Scope and Applicability
+
+### 1.1 Purpose
+
+This document specifies a governance framework for agentic AI systems operating in federal and enterprise environments. It defines the trust boundaries, tool-use controls, identity constraints, failure modes, and evaluation methodology required to deploy autonomous AI systems with accountability, auditability, and human oversight.
+
+The framework is designed to be adopted, adapted, and extended. The reference implementation in this repository demonstrates the framework applied to a federal compliance workflow. The governance pattern applies wherever an AI system moves from generating responses to taking actions.
+
+---
+
+### 1.2 What This Framework Covers
+
+This framework applies to any system meeting the following definition:
+
+> **Agentic AI system:** A software system in which a large language model serves as a reasoning and orchestration layer that perceives state, selects and invokes tools, processes results, and iterates across multiple steps to complete a task — without requiring human input at each step.
+
+Covered system characteristics:
+- Multi-step execution with tool invocation
+- Autonomous state management across steps
+- Access to external systems, APIs, or data stores via registered tools
+- Output that informs, initiates, or constitutes a real-world action
+
+---
+
+### 1.3 What This Framework Does Not Cover
+
+| Out of Scope | Rationale |
+|---|---|
+| Single-shot LLM completions | No autonomous tool use or multi-step execution — governed by standard LLM guardrail frameworks |
+| RAG systems without tool invocation | Retrieval-augmented generation without autonomous action — see `trust-layer-rag` for retrieval governance |
+| Multi-agent orchestration | Agent-to-agent trust, delegation chains, and coordination governance — addressed in `trust-layer-multiagent` |
+| Model training and evaluation | Addressed in `responsible-mlops-risk-engine` |
+| Human-in-the-loop systems where every step requires approval | Approval at every step eliminates the autonomous execution pattern this framework governs |
+
+---
+
+### 1.4 Intended Audience
+
+**Federal AI program managers and system owners** implementing or evaluating agentic AI under OMB M-24-10, M-25-21, or FISMA ATO requirements.
+
+**Enterprise AI risk and compliance teams** establishing internal governance standards for agentic systems under SR 11-7, SOC 2, HIPAA Security Rule, or ISO 42001.
+
+**AI architects and engineers** building agentic systems who require a governance specification to implement against — not a policy document to satisfy after the fact.
+
+---
+
+### 1.5 Relationship to Existing Frameworks
+
+This framework does not replace existing federal or enterprise AI governance standards. It extends them to address the specific characteristics of autonomous, multi-step AI execution.
+
+| Standard | Relationship |
+|---|---|
+| NIST AI RMF 1.0 | This framework operationalizes the MAP and MEASURE functions for agentic systems |
+| NIST AI 600-1 | Extends GenAI risk guidance to cover multi-step autonomous behavior |
+| NIST 800-53 Rev 5 | Controls AC, AU, CA, RA, SI families apply directly; mapping in Section 9 |
+| OMB M-24-10 / M-25-21 | Addresses AI use case inventory and risk assessment requirements for agentic deployments |
+| OWASP LLM Top 10 | Threat model in Section 6 maps adversarial risks to OWASP categories |
+
+---
+
+### 1.6 Versioning
+
+This framework is versioned using semantic versioning. The regulatory mapping table in Section 9 tracks the NIST and OMB revision dates against which each version was validated. Consumers of this framework should verify mapping currency when NIST or OMB guidance is updated.
+
+**Current version:** 1.0
+**NIST AI RMF reference:** 1.0 (January 2023)
+**NIST AI 600-1 reference:** 1.0 (July 2024)
+**OMB M-24-10 reference:** March 2024
+
+---
+
+## 2. Trust Boundary Taxonomy
+
+### 2.1 Definition
+
+A trust boundary is a transition point where the authority, identity, or data provenance of an action changes hands. In traditional software systems, trust boundaries are well-understood: a network perimeter, an API authentication gate, a database access control check.
+
+In agentic AI systems, trust boundaries are harder to see and easier to violate. The agent reasons across multiple steps, calls multiple tools, and assembles outputs from multiple sources — each transition is a potential trust boundary crossing. Unlike a network packet, an agent's reasoning state carries no inherent authentication. Without explicit boundary enforcement, an agent can accumulate authority it was never delegated, act on data it was never authorized to consume, or produce assertions it has no evidentiary basis to make.
+
+This section defines the five trust boundaries present in every agentic AI system and specifies how each is enforced in this framework.
+
+---
+
+### 2.2 The Five Trust Boundaries
+
+#### Boundary 1 — Human ↔ Agent (Delegation Boundary)
+
+The delegation boundary defines what the human principal has authorized the agent to do on their behalf. It is established at run initiation and cannot be expanded during execution.
+
+**What crosses this boundary:** Task scope, input data, execution parameters, approval tokens for HUMAN_GATED tools.
+
+**What cannot cross:** Implicit permission expansion ("the agent needed to do X to complete Y, so X was authorized"), credentials beyond the declared execution identity, scope beyond the declared control family.
+
+**Enforcement:** Trust ledger `execution_identity` block. Agent runs as `audit-readonly-role` with short-lived session credentials. Scope is declared at invocation, not inferred.
+
+**Violation pattern:** Agent interprets a broad task instruction as authorization to call tools outside its registered set. Addressed by the implicit-DENIED rule: any tool not in the trust ledger is rejected at the pre-call PEP gate.
+
+---
+
+#### Boundary 2 — Agent ↔ Tool (Invocation Boundary)
+
+The invocation boundary governs which tools the agent may call, under what conditions, and with what constraints. This is the most frequently crossed boundary in a multi-step agent run and the most common site of governance failure.
+
+**What crosses this boundary:** Tool invocation requests, input parameters, tool results returned to agent reasoning state.
+
+**What cannot cross:** Write operations from a read-only execution identity, calls to unregistered tools, parameters exceeding declared scope.
+
+**Enforcement:** Policy enforcement points (pre-call and post-call) defined per tool in the trust ledger. Pre-call validates scope bounds. Post-call sanitizes results before they enter agent reasoning state.
+
+**Violation pattern:** Agent passes unsanitized retrieval content directly to a tool parameter — a vector for prompt injection via evidence content. Post-call sanitization closes this path.
+
+---
+
+#### Boundary 3 — Agent ↔ Retrieval (Knowledge Boundary)
+
+The knowledge boundary governs what the agent may treat as authoritative when constructing assessments. In this framework, retrieval is provided by the P2 governed RAG system (`trust-layer-rag`), which enforces its own guardrails, PII filtering, and citation integrity before results reach the agent.
+
+**What crosses this boundary:** Retrieved compliance requirements, control text, policy references — all with attached source URI, retrieval timestamp, and evidence hash.
+
+**What cannot cross:** Unauthenticated assertions, retrieval results without provenance metadata, content that failed P2's guardrail or reranking gates.
+
+**Enforcement:** Evidence lineage requirements enforced per tool entry (`evidence_lineage_required: true`). Agent reasoning state must carry `source_uri`, `retrieval_timestamp`, and `evidence_hash` for every evidentiary claim in the output artifact.
+
+**Violation pattern:** Agent hallucinates a control requirement not present in retrieved content. Evidence lineage enforcement makes this detectable: any assertion in the output without a traceable source URI is a governance finding.
+
+---
+
+#### Boundary 4 — Agent ↔ Output (Assertion Boundary)
+
+The assertion boundary governs what the agent may claim, in what form, and to whom. An agent that produces an incorrect assessment draft is an operational failure. An agent that submits that assessment to an external system without human review is a governance failure.
+
+**What crosses this boundary:** Draft assessment artifacts, control status determinations, evidence citations.
+
+**What cannot cross:** Final compliance determinations without human review, submissions to external systems without an approval token, assertions not grounded in evidence-lineage-verified sources.
+
+**Enforcement:** `submit_assessment_artifact` is HUMAN_GATED. Pre-call PEP requires a valid approval token from an Authorizing Official or Delegate. Governance decision artifact (`governance_decision.json`) is written on every submission event.
+
+**Violation pattern:** Agent marks a control compliant based on incomplete evidence, then attempts submission. Human gate intercepts before external dissemination. Incomplete evidence is a Medium-tier failure; unauthorized submission would be High-tier.
+
+---
+
+#### Boundary 5 — Agent ↔ External System (Dissemination Boundary)
+
+The dissemination boundary governs interaction with any system outside the agent's declared execution scope — external APIs, notification systems, downstream consumers of assessment output.
+
+**What crosses this boundary:** Approved assessment artifacts, audit trail records, governance decision logs.
+
+**What cannot cross:** Unapproved drafts, intermediate reasoning traces, PII, data classified above the tool's `data_classifications_allowed` level.
+
+**Enforcement:** No external system calls are registered in the trust ledger beyond `s3:PutObject` on the designated audit evidence bucket. Any attempt to call an unregistered external endpoint is DENIED at the pre-call gate and logged.
+
+**Violation pattern:** Prompt injection via retrieved evidence instructs the agent to POST results to an external endpoint. No such tool exists in the trust ledger. Attempt is rejected, logged, and run is terminated.
+
+---
+
+### 2.3 Boundary Interaction Summary
+
+| Boundary | Crossing Direction | Primary Enforcement | Violation Class |
+|---|---|---|---|
+| Human ↔ Agent | Delegation in, results out | Trust ledger execution identity | Scope expansion |
+| Agent ↔ Tool | Invocation out, results in | Pre/post-call PEPs | Unauthorized invocation |
+| Agent ↔ Retrieval | Knowledge in | Evidence lineage requirements | Hallucinated assertion |
+| Agent ↔ Output | Assertion out | Human gate + approval token | Unauthorized submission |
+| Agent ↔ External System | Dissemination out | Implicit DENY on unregistered tools | Data exfiltration |
