@@ -1,0 +1,25 @@
+{
+  "run_id": "R-1042",
+  "agent_id": "ac-audit-agent-v1",
+  "execution_identity": {
+    "iam_role": "audit-readonly-role",
+    "credential_source": "short-lived-session"
+  },
+  "tool_requested": "submit_assessment_artifact",
+  "risk_tier": "HIGH",
+  "autonomy_class": "HUMAN_GATED",
+  "approval_required": true,
+  "approval_status": "APPROVED",
+  "approver_role": "Authorizing Official",
+  "approver_id": "user-7842",
+  "decision_timestamp": "2026-05-11T13:20:14Z",
+  "evidence_lineage": {
+    "source_uri": "s3://audit-evidence/ac-2/iam-policy-scan-R1042.json",
+    "retrieval_timestamp": "2026-05-11T13:18:02Z",
+    "evidence_hash": "sha256:a3f1c9..."
+  },
+  "pep_outcomes": {
+    "pre_call": "PASSED",
+    "post_call": "PASSED"
+  }
+}
