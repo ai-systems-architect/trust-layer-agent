@@ -3,7 +3,7 @@
 
 **Version:** 1.0
 **Last Updated:** 2026-05-11
-**Status:** In Progress
+**Status:** Phase 1 Complete
 
 > For full technical specification, enforcement details, and reference tables see [framework_reference.md](framework_reference.md).
 
@@ -98,6 +98,56 @@ Full catalog: [Section 5 of framework_reference.md](framework_reference.md#5-fai
 
 ---
 
+### Reasoning Trace
+
+The audit trail records what the agent did. The reasoning trace records how it decided — the intermediate reasoning state at each step, inputs considered, and confidence assessments that drove state transitions. It is the evidentiary basis for the auditor question: "Why did the agent reach that conclusion?"
+
+Captured via Langfuse span instrumentation at every state transition, tool invocation, sufficiency assessment, and PEP gate. Retained for 365 days minimum; 7 years for runs involving HUMAN_GATED events.
+
+Full specification: [Section 3.6 of framework_reference.md](framework_reference.md#36-reasoning-trace-requirements)
+
+---
+
+### Threat Model
+
+Four adversarial scenarios are documented and instrumented: prompt injection via retrieved evidence (TM-001), confused deputy attack (TM-002), insider misuse (TM-003), and compromised retrieval corpus (TM-004). Each maps to an OWASP LLM Top 10 category and identifies the governance control that mitigates it.
+
+Two scenarios carry MEDIUM residual risk — insider misuse and corpus compromise — where platform-layer controls outside this framework's scope are the final containment layer. The inheritance pattern in Section 10 addresses the handoff.
+
+Full specification: [Section 6 of framework_reference.md](framework_reference.md#6-threat-model)
+
+---
+
+### Risk Classification
+
+Every agent action is assigned to one of four risk tiers based on worst-case failure impact: Low (read-only retrieval), Medium (aggregation and drafting), High (submission and dissemination), Critical (write access or IAM modification). Tier assignment drives autonomy class, approval requirements, logging requirements, and audit retention.
+
+The CRITICAL tier maps to `DENIED` — these actions are rejected at the pre-call gate regardless of context.
+
+Full specification: [Section 7 of framework_reference.md](framework_reference.md#7-agent-risk-classification-matrix)
+
+---
+
+### Evaluation Methodology
+
+Standard ML evaluation metrics break for agentic systems: non-determinism, multi-step error propagation, and the hedge problem (compliance hedging is correct behavior, not evasion) all require a different approach.
+
+The three-tier methodology addresses this: deterministic code-based graders for binary governance assertions, LLM-as-judge for reasoning quality and hedge appropriateness, and human review criteria for edge cases neither tier can resolve. The evaluation set covers 18 scenarios: 8 happy path, 7 failure modes, 3 adversarial.
+
+Full specification: [Section 8 of framework_reference.md](framework_reference.md#8-evaluation-methodology)
+
+---
+
+### Inheritance Pattern
+
+No agent operates in isolation. Platform controls (IAM, network, credential management, infrastructure logging) and application controls (trust ledger, PEPs, reasoning trace, evidence lineage) are distinct layers. Conflating them produces either over-claiming or under-delivering.
+
+This framework is Layer 3 in a four-layer governance stack. It consumes Layer 2 (governed RAG) as a service and will be consumed by Layer 4 (multi-agent orchestration) in the same pattern.
+
+Full specification: [Section 10 of framework_reference.md](framework_reference.md#10-inheritance-pattern)
+
+---
+
 ## What Is Built
 
 ### Governance Artifacts (complete)
@@ -105,8 +155,8 @@ Full catalog: [Section 5 of framework_reference.md](framework_reference.md#5-fai
 - **Risk Classification Matrix** (`docs/agent_risk_classification_matrix.md`) — four-tier risk framework
 - **Governance Decision Schema** (`docs/examples/governance_decision.json`) — runtime audit artifact
 
-### Framework Document (in progress)
-Sections complete: 1–5. Remaining: Threat Model, Evaluation Methodology, Regulatory Mapping, Inheritance Pattern.
+### Framework Document (complete — Phase 1)
+All 10 sections complete: Scope, Trust Boundaries, Agent Identity (incl. Reasoning Trace), Tool-Use Governance, Failure Mode Catalog, Threat Model, Risk Classification Matrix, Evaluation Methodology, Regulatory Mapping (incl. FedRAMP ConMon), Inheritance Pattern.
 
 ### Agent Implementation (planned — Phase 2)
 LangGraph single-agent system demonstrating the framework against AC-2, AC-3, AC-6, AC-17 controls.
@@ -125,6 +175,7 @@ Three-tier evaluation: deterministic graders, LLM-as-judge, human review criteri
 | NIST 800-53 Rev 5 | AC, AU, CA, RA, SI families — full mapping in reference document |
 | OMB M-24-10 / M-25-21 | AI use case inventory and risk assessment for agentic deployments |
 | OWASP LLM Top 10 | Threat model maps adversarial risks to OWASP categories |
+| FedRAMP ConMon | Evidence collection, anomaly reporting, and POA&M input for continuous monitoring workflows |
 
 ---
 
