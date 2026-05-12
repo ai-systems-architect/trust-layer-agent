@@ -1,4 +1,4 @@
-# Architecture — The Trust Layer for Federal Agentic AI
+# Architecture — The Trust Layer for Enterprise Agentic AI
 
 High-level system design. For why each component was chosen over alternatives,
 see [decision_log.md](decision_log.md). For the governance pattern this

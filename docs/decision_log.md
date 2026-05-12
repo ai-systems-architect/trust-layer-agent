@@ -1,4 +1,4 @@
-# Decision Log — The Trust Layer for Federal Agentic AI
+# Decision Log — The Trust Layer for Enterprise Agentic AI
 
 All architectural decisions recorded here. Format: decision made, rationale,
 alternatives evaluated. Referenced from `src/` and `config/trust_ledger.yaml`
