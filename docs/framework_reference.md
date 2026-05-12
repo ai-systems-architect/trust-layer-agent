@@ -300,6 +300,62 @@ The inheritance pattern for platform vs. application responsibility is addressed
 
 ---
 
+### 3.6 Reasoning Trace Requirements
+
+#### What the Reasoning Trace Is
+
+The audit trail defined in Section 3.4 records what the agent did — tool invocations, PEP outcomes, approval events. The reasoning trace records how the agent decided to do it — the intermediate reasoning state at each step, the inputs considered, and the confidence assessments that drove state transitions.
+
+The reasoning trace is the evidentiary basis for answering the question federal and enterprise auditors will ask: "Why did the agent reach that conclusion?" Without a reasoning trace, the audit trail proves actions were taken but cannot explain why.
+
+#### What Must Be Captured
+
+The following elements must be captured in the reasoning trace for every agent run. Langfuse span instrumentation is the implementation mechanism.
+
+| Element | Capture Point | Required Fields |
+|---|---|---|
+| State entry | Every LangGraph state transition | State name, entry timestamp, input context size (tokens) |
+| State exit | Every LangGraph state transition | Exit timestamp, output context size (tokens), next state determination |
+| Tool invocation reasoning | Pre-call, within planning state | Tool selected, parameters constructed, rationale recorded in agent scratchpad |
+| Tool result incorporation | Post-call, within evidence-gathering state | Result size (tokens), lineage fields present/absent, sanitization outcome |
+| Sufficiency assessment | Sufficiency-assessment state | Controls assessed, evidence items per control, sufficiency determination with rationale |
+| Draft generation reasoning | Drafting state | Assertions made, evidence citations per assertion, hedge flags raised |
+| Human review handoff | Awaiting-human-review state | Review trigger reason, open questions documented, partial results summary |
+| Circuit breaker events | Any state | Breaker type, trigger condition, step count at trigger |
+| PEP outcomes | PEP-1 and PEP-2 | Gate name, check performed, pass/fail, failure reason if applicable |
+
+#### Retention Requirements
+
+| Trace Element | Minimum Retention |
+|---|---|
+| Full reasoning trace per run | 365 days |
+| Reasoning trace for runs involving HUMAN_GATED events | 2555 days (7 years) |
+| Circuit breaker event traces | 365 days |
+| Adversarial detection events (injection scan hits) | 365 days |
+
+Reasoning traces are retained separately from operational audit logs. Both must be available for the same run ID.
+
+#### Access Controls
+
+| Role | Access |
+|---|---|
+| Agent runtime | Write-only during run execution — no read access to prior run traces |
+| AI Governance Officer | Read access to all traces |
+| Authorizing Official | Read access to traces for runs requiring their approval |
+| Auditor | Read access to traces within their audit scope |
+| Operations | Read access to anonymized token and latency metrics — no access to reasoning content |
+
+The agent has no mechanism to read, modify, or delete its own reasoning traces. This is enforced at the IAM role level — `audit-readonly-role` has no permissions on the Langfuse data store.
+
+#### Trace Scope Boundaries
+
+The reasoning trace captures the agent's reasoning state. It does not capture:
+- The contents of the system prompt (considered sensitive operational configuration)
+- Raw tool results before PEP-2 sanitization (sanitized results are captured; pre-sanitization content is not retained)
+- Human approver deliberation — only the approval decision and approver role are recorded
+
+---
+
 ## 4. Tool-Use Governance and Policy Enforcement Points
 
 ### 4.1 The Tool-Use Problem in Agentic Systems
@@ -878,6 +934,26 @@ The agent implementation assesses AC-family controls and is itself subject to co
 | LLM08 — Excessive Permissions | TM-003 | Least privilege execution identity; run scope validation |
 | LLM09 — Misinformation | FM-001, FM-007 | Evidence lineage; retrieval timestamp validation; human review |
 | LLM10 — Unbounded Consumption | FM-003, FM-006 | Circuit breakers; `max_calls_per_run`; `timeout_seconds` |
+
+---
+
+### 9.7 FedRAMP Continuous Monitoring
+
+FedRAMP Continuous Monitoring (ConMon) requires cloud service providers and federal agencies operating FedRAMP-authorized systems to maintain ongoing visibility into their security control posture — typically through monthly vulnerability scans, annual assessments, and event-driven reporting.
+
+The agent implemented in this project is designed to support the evidence collection phase of ConMon workflows, not to replace the full ConMon program. The mapping below identifies where framework components align to FedRAMP ConMon requirements.
+
+| FedRAMP ConMon Requirement | Framework Coverage |
+|---|---|
+| Continuous control monitoring | Langfuse observability — token baseline, tool failure rates, PEP rejection rates monitored per run |
+| Evidence collection for ongoing assessments | Agent produces draft assessments with full evidence lineage for AC-2, AC-3, AC-6, AC-17 — directly applicable to monthly ConMon evidence packages |
+| Audit trail for control assessments | Governance decision record + reasoning trace — Section 3.4 and 3.6 |
+| Human review of assessment artifacts | HUMAN_GATED submission gate — Authorizing Official approval required before artifact submission |
+| Incident and anomaly reporting | Circuit breaker events, DENIED tool attempts, and injection scan hits are logged as anomaly events — suitable for ConMon incident log entries |
+| Plan of Action and Milestones (POA&M) input | FM-002 (incomplete evidence) and FM-007 (stale evidence) failure modes produce structured gap documentation — suitable for POA&M input |
+| Deviation requests | Human review tier in the three-tier evaluation methodology provides the review record required for FedRAMP deviation request documentation |
+
+**Scope note:** FedRAMP ConMon requires coverage across the full FedRAMP Moderate or High baseline (325+ controls). The agent demonstrates the evidence collection pattern against four AC-family controls. Extension to full ConMon scope is documented in `FUTURE_WORK.md` under Multi-control coverage.
 
 ---
 
