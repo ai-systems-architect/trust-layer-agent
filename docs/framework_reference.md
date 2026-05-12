@@ -747,3 +747,230 @@ Collected via Langfuse instrumentation from Phase 2. Reported alongside evaluati
 The cost-per-control-assessment metric is the operational output that fractional buyers act on. It is surfaced in the evaluation report as: total token cost per run ÷ number of controls assessed = cost per control.
 
 Tool additions require a corresponding decision log entry documenting the rationale for the assigned risk tier and autonomy class.
+
+---
+
+## 9. Regulatory Mapping
+
+### 9.1 Overview
+
+This section maps framework components to the federal and enterprise regulatory standards most relevant to agentic AI deployments. The mapping is organized by standard. For each standard, the table identifies which framework section, governance artifact, or implementation control satisfies the relevant requirement.
+
+This mapping is not a compliance certification. It documents design intent and provides a starting point for program-specific ATO packages, AI use case inventories, and internal audit evidence.
+
+---
+
+### 9.2 NIST AI Risk Management Framework 1.0
+
+The AI RMF defines four core functions: GOVERN, MAP, MEASURE, MANAGE. Agentic systems require specific attention in MAP and MEASURE, where non-determinism and multi-step execution create evaluation challenges that static model governance does not address.
+
+| AI RMF Function | Subcategory | Framework Coverage |
+|---|---|---|
+| GOVERN 1.1 | Policies and accountability for AI risk | Trust ledger autonomy classes + governance decision record establish accountability chain |
+| GOVERN 1.2 | Organizational roles and responsibilities | Section 3 — Agent Identity and Delegated Authority; Section 10 — Inheritance Pattern |
+| GOVERN 2.2 | Risk tolerance defined | Risk Classification Matrix — four-tier framework with explicit failure impact definitions |
+| MAP 1.1 | Context and categorization of AI system | Section 1 — Scope and Applicability; Section 1.2 — system definition |
+| MAP 2.1 | AI risk identification | Section 5 — Failure Mode Catalog; Section 6 — Threat Model |
+| MAP 2.2 | Scientific and organizational context | Section 9 — Regulatory Mapping; versioning in Section 1.6 |
+| MAP 5.1 | Likelihood and impact of AI risks | Risk Classification Matrix — tier assignment criteria in Section 7.4 |
+| MEASURE 1.1 | Evaluation methods appropriate to system type | Section 8 — three-tier evaluation methodology addressing non-determinism |
+| MEASURE 2.1 | Evaluation of AI system trustworthiness | Deterministic graders + LLM-as-judge — Section 8.2 |
+| MEASURE 2.5 | AI system outputs monitored | Langfuse observability — Section 8.5; PEP-3 pre-output release |
+| MEASURE 2.7 | AI system performance evaluated | Evaluation scenario set — Section 8.3; success criteria — Section 8.4 |
+| MANAGE 1.3 | Risk response plans | Recovery paths documented per failure mode — Section 5 |
+| MANAGE 2.2 | Mechanisms for human oversight | HUMAN_GATED autonomy class; PEP-3 human review flag; governance decision record |
+| MANAGE 4.1 | Residual risks monitored | Threat model residual risk assessments — Section 6.3 |
+
+---
+
+### 9.3 NIST AI 600-1 — Generative AI Risk
+
+NIST AI 600-1 identifies twelve unique risks for generative AI systems. For agentic systems, five are directly relevant and require controls beyond what 600-1 prescribes for single-shot generation.
+
+| AI 600-1 Risk | Applicability to Agentic Systems | Framework Control |
+|---|---|---|
+| Prompt Injection | Elevated — agent retrieves external content across multiple steps, expanding injection surface | TM-001; PEP-2 injection scan |
+| Data Privacy | Elevated — agent accesses multiple data sources per run | PEP-2 PII scan; `data_classifications_allowed` per tool |
+| Confabulation | Elevated — multi-step reasoning compounds hallucination risk | FM-001; evidence lineage enforcement; PEP-3 completeness check |
+| Human-AI Configuration | Directly applicable — autonomy level must be declared and enforced | Trust ledger autonomy classes; HUMAN_GATED gate |
+| Information Integrity | Directly applicable — agent outputs inform compliance decisions | Evidence hash validation; TM-004 corpus integrity controls |
+| Dangerous or Violent Recommendations | Low applicability — compliance workflow scope | Trust ledger `prohibited_actions` limits action scope |
+| Obscene, Degrading Content | Not applicable — compliance workflow scope | — |
+
+---
+
+### 9.4 OMB M-24-10 and M-25-21
+
+OMB M-24-10 (March 2024) requires federal agencies to maintain AI use case inventories, conduct rights-impacting and safety-impacting AI designations, and ensure minimum practices for high-impact AI.
+
+OMB M-25-21 extends these requirements with specific attention to agentic and autonomous AI deployments.
+
+| OMB Requirement | Framework Coverage |
+|---|---|
+| AI use case inventory entry | Section 1 — Scope and Applicability provides the system description; Risk Classification Matrix provides impact tier |
+| Rights-impacting AI designation | Risk tier HIGH and CRITICAL tools trigger enhanced human oversight requirements — Section 7 |
+| Safety-impacting AI designation | Threat model residual risk assessments inform safety impact determination — Section 6.3 |
+| Minimum practices — human oversight | HUMAN_GATED autonomy class; PEP-3 human review flag; governance decision record |
+| Minimum practices — testing and evaluation | Three-tier evaluation methodology — Section 8 |
+| Minimum practices — monitoring | Langfuse observability; circuit breakers; Langfuse token baseline anomaly detection |
+| Accountability and transparency | Governance decision record written per run; audit trail requirements — Section 3.4 |
+
+---
+
+### 9.5 NIST 800-53 Rev 5 — Security and Privacy Controls
+
+The agent implementation assesses AC-family controls and is itself subject to controls from the AU, CA, RA, and SI families. This table maps both: controls the agent assesses, and controls the agent must satisfy as a system.
+
+#### AC Family — Access Control (assessed by agent)
+
+| Control | Description | Agent Assessment Coverage |
+|---|---|---|
+| AC-2 | Account Management | IAM policy scan; dormant credential detection |
+| AC-3 | Access Enforcement | Policy attachment verification; least privilege check |
+| AC-6 | Least Privilege | Over-privileged role detection; `iam:*` wildcard detection |
+| AC-17 | Remote Access | CloudTrail remote access event analysis |
+
+#### AU Family — Audit and Accountability (satisfied by agent system)
+
+| Control | Description | Framework Coverage |
+|---|---|---|
+| AU-2 | Event Logging | PEP-1 and PEP-2 log every tool invocation and outcome |
+| AU-3 | Content of Audit Records | Governance decision record fields — Section 3.4 |
+| AU-9 | Protection of Audit Information | Audit trail is write-once; no agent tool has delete permissions on audit logs |
+| AU-11 | Audit Record Retention | Per-tool `audit_retention_days` — 365 days minimum, 2555 days for HUMAN_GATED events |
+
+#### CA Family — Assessment, Authorization, and Monitoring (satisfied by agent system)
+
+| Control | Description | Framework Coverage |
+|---|---|---|
+| CA-2 | Control Assessments | Agent produces draft assessments for AC-2, AC-3, AC-6, AC-17 |
+| CA-7 | Continuous Monitoring | Langfuse observability — token baseline, tool failure rates, state transition latency |
+| CA-8 | Penetration Testing | Adversarial evaluation scenarios — Section 8.3 |
+
+#### RA Family — Risk Assessment (satisfied by agent system)
+
+| Control | Description | Framework Coverage |
+|---|---|---|
+| RA-3 | Risk Assessment | Risk Classification Matrix — Section 7; Threat Model — Section 6 |
+| RA-5 | Vulnerability Monitoring | Failure Mode Catalog — Section 5; circuit breaker events |
+
+#### SI Family — System and Information Integrity (satisfied by agent system)
+
+| Control | Description | Framework Coverage |
+|---|---|---|
+| SI-3 | Malicious Code Protection | PEP-2 injection pattern scan on all tool results |
+| SI-10 | Information Input Validation | PEP-1 scope bounds and prohibited action checks |
+| SI-12 | Information Management and Retention | `audit_retention_days` per tool; governance decision record retention |
+
+---
+
+### 9.6 OWASP LLM Top 10 Cross-Walk
+
+| OWASP Category | Threat ID | Framework Control |
+|---|---|---|
+| LLM01 — Prompt Injection | TM-001 | PEP-2 injection scan; evidence lineage; HUMAN_GATED submission |
+| LLM02 — Insecure Output Handling | FM-001, FM-005 | Evidence lineage enforcement; PEP-3 completeness check |
+| LLM03 — Training Data Poisoning | TM-004 | Evidence hash validation; source URI allowlisting |
+| LLM04 — Model Denial of Service | FM-003, FM-006 | Circuit breakers; `max_calls_per_run`; token baseline monitoring |
+| LLM05 — Supply Chain Vulnerabilities | TM-004 | P2 governed RAG guardrails; retrieval corpus integrity |
+| LLM06 — Excessive Agency | TM-002 | Trust ledger implicit DENY; PEP-1 scope bounds check |
+| LLM07 — System Prompt Leakage | — | Not applicable — no sensitive data in system prompt |
+| LLM08 — Excessive Permissions | TM-003 | Least privilege execution identity; run scope validation |
+| LLM09 — Misinformation | FM-001, FM-007 | Evidence lineage; retrieval timestamp validation; human review |
+| LLM10 — Unbounded Consumption | FM-003, FM-006 | Circuit breakers; `max_calls_per_run`; `timeout_seconds` |
+
+---
+
+## 10. Inheritance Pattern
+
+### 10.1 Platform vs. Application Responsibility
+
+No agentic AI system operates in isolation. Every deployed agent inherits a set of controls from the platform it runs on — the cloud infrastructure, identity provider, network controls, and security tooling that the hosting organization provides. The application layer — the agent itself — is responsible for controls that the platform cannot provide: reasoning governance, tool-use constraints, evidence lineage, and output quality.
+
+Conflating platform and application responsibility is a common governance failure. It produces two failure modes: over-claiming (the application takes credit for platform controls it does not implement) and under-delivering (the application assumes the platform covers controls it does not).
+
+This section defines the boundary explicitly.
+
+---
+
+### 10.2 Responsibility Matrix
+
+| Capability | Platform Provides | Application Provides |
+|---|---|---|
+| **Identity and Access** | IAM role creation, policy attachment, STS session token issuance | Execution identity declaration in trust ledger; short-lived session enforcement; impersonation prevention |
+| **Network Security** | VPC isolation, security groups, TLS termination | Tool call scope bounds validation; prohibited external endpoint enforcement |
+| **Credential Management** | Secrets Manager, credential rotation, key management | No persistent credentials in agent runtime; credential source declared in trust ledger |
+| **Audit Logging — Infrastructure** | CloudTrail, VPC flow logs, S3 access logs | — |
+| **Audit Logging — Application** | — | PEP-1 and PEP-2 invocation logs; governance decision record; reasoning trace |
+| **Encryption at Rest** | S3 server-side encryption, KMS key management | Evidence hash integrity validation |
+| **Availability** | Multi-AZ deployment, auto-scaling, load balancing | Circuit breakers; timeout enforcement; graceful degradation |
+| **Vulnerability Management** | Host patching, container scanning, dependency updates | Injection pattern scanning at PEP-2; trust ledger schema versioning |
+| **Human Oversight — Platform** | Role-based access to run initiation; IdAM integration | — |
+| **Human Oversight — Application** | — | HUMAN_GATED autonomy class; approval token validation; governance decision record |
+| **Retrieval Corpus Integrity** | S3 versioning, object lock, access logging | Evidence hash validation; source URI allowlisting; retrieval timestamp currency check |
+| **Observability — Infrastructure** | CloudWatch metrics, X-Ray tracing | — |
+| **Observability — Application** | — | Langfuse state transition tracing; token instrumentation; tool call telemetry |
+
+---
+
+### 10.3 The Layered Governance Stack
+
+This project is the third layer in a four-layer governance stack. Each layer governs a different aspect of the AI system and inherits controls from the layers below it.
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Layer 4 — Orchestration Governance                 │
+│  trust-layer-multiagent                             │
+│  Agent-to-agent trust, delegation, coordination     │
+├─────────────────────────────────────────────────────┤
+│  Layer 3 — Reasoning Governance (this project)      │
+│  trust-layer-agent                                  │
+│  Autonomous action, tool use, human oversight       │
+├─────────────────────────────────────────────────────┤
+│  Layer 2 — Retrieval Governance                     │
+│  trust-layer-rag                                    │
+│  Knowledge retrieval, guardrails, citation integrity│
+├─────────────────────────────────────────────────────┤
+│  Layer 1 — Data and Model Governance                │
+│  responsible-mlops-risk-engine                      │
+│  Training data, fairness, drift monitoring          │
+└─────────────────────────────────────────────────────┘
+```
+
+Layer 3 (this project) consumes Layer 2 as a service. The agent does not implement its own retrieval — it calls the governed RAG system and receives evidence that has already passed through guardrails, reranking, and PII filtering. This is the architectural decision that prevents retrieval governance from being duplicated at the agent layer.
+
+Layer 4 will consume Layer 3 as a service in the same pattern: a multi-agent orchestrator delegates to governed single agents rather than reimplementing agent-level governance at the orchestration layer.
+
+---
+
+### 10.4 What Adopters Must Provide
+
+An organization adopting this framework for their own agentic deployment must provide the following platform-layer controls before the application-layer governance in this framework is effective:
+
+| Prerequisite | Description |
+|---|---|
+| IAM role provisioned | `audit-readonly-role` (or equivalent) created with least-privilege policy attached |
+| STS session token issuance | Short-lived session tokens configured — maximum 1 hour validity |
+| S3 audit bucket provisioned | Write-once audit evidence bucket with versioning and object lock enabled |
+| CloudTrail enabled | Account-level CloudTrail logging active for the declared audit scope |
+| Langfuse instance accessible | Self-hosted or cloud Langfuse instance reachable from agent runtime |
+| Run initiation access controls | Role-based access controls on who may initiate agent runs — IdAM platform responsibility |
+
+Application-layer governance controls in this framework are ineffective without these prerequisites in place.
+
+---
+
+### 10.5 Future Layer — Multi-Agent Orchestration
+
+When Layer 4 (`trust-layer-multiagent`) is implemented, the inheritance pattern extends as follows:
+
+The orchestration layer inherits this framework's trust ledger pattern but operates at a higher abstraction: instead of registering individual tools, it registers individual agents as callable services — each with their own autonomy class, risk tier, and approval requirements.
+
+The governance questions that Layer 4 must answer, which this framework does not address:
+
+- How is trust established between agents? (Agent-to-agent authentication)
+- How is delegated authority scoped when an orchestrator delegates to a sub-agent?
+- How is the audit trail maintained across agent boundaries?
+- What happens when a sub-agent's governance controls conflict with the orchestrator's declared scope?
+
+These questions are documented in `FUTURE_WORK.md` and will be addressed in `trust-layer-multiagent`.
