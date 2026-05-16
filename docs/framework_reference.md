@@ -356,6 +356,44 @@ The reasoning trace captures the agent's reasoning state. It does not capture:
 
 ---
 
+### 3.7 Memory Architecture
+
+#### Decision
+
+The agent uses ephemeral per-run memory with retrieval-augmented knowledge sourced from the governed RAG system (`trust-layer-rag`). No persistent memory is maintained across runs. The agent begins each run with a clean reasoning state scoped to the declared control family and account.
+
+**Recorded as DL-035 in `docs/decision_log.md`.**
+
+#### Memory Architecture Options Evaluated
+
+| Architecture | Description | Disposition |
+|---|---|---|
+| Ephemeral per-run | Reasoning state lives in LangGraph state dict for run duration only. No cross-run memory. | **Selected** |
+| Persistent agent memory | Agent retains findings, patterns, and context across runs — builds up institutional knowledge over time | Deferred — see rationale below |
+| Retrieval-augmented memory | Prior run results stored in a vector store and retrieved as context for subsequent runs | Deferred — see rationale below |
+
+#### Rationale for Ephemeral Memory
+
+**Governance clarity.** Each run starts with a declared scope — control family, account ID, initiating principal. Persistent memory introduces state that cannot be fully attributed to a specific authorized scope declaration. An agent that "remembers" prior findings may incorporate observations from a prior run's scope into a current run's assessment — a provenance violation the audit trail cannot detect.
+
+**Audit trail integrity.** The governance decision record and reasoning trace are run-scoped. A persistent memory layer creates a second state store that sits outside the per-run audit trail. Two state stores with different retention and access controls create compliance gaps.
+
+**Privacy and data minimization.** Evidence collected during a run — IAM policy content, CloudTrail events, compliance determinations — should not persist beyond the retention requirements declared in the trust ledger. Ephemeral memory enforces data minimization without requiring a separate purge mechanism.
+
+**Failure isolation.** A reasoning error in run N cannot propagate to run N+1 when memory is ephemeral. Each run's error surface is bounded to its own execution.
+
+#### What Provides Knowledge Continuity
+
+Authoritative compliance knowledge — NIST control text, FedRAMP requirements, OMB policy — is provided by the P2 governed RAG system on demand. The agent does not need to remember what AC-2 requires across runs because that knowledge is retrieved fresh from a governed, versioned corpus on every invocation.
+
+This is the architectural separation that makes ephemeral memory viable: static authoritative knowledge lives in the retrieval layer; dynamic run-specific evidence lives in the ephemeral reasoning state.
+
+#### Future Consideration
+
+Persistent memory becomes relevant in multi-agent workflows (P4) where an orchestrating agent maintains a shared evidence accumulation state across multiple specialized sub-agents operating in parallel. That pattern is outside single-agent scope and is documented in `FUTURE_WORK.md`.
+
+---
+
 ## 4. Tool-Use Governance and Policy Enforcement Points
 
 ### 4.1 The Tool-Use Problem in Agentic Systems
@@ -1050,3 +1088,78 @@ The governance questions that Layer 4 must answer, which this framework does not
 - What happens when a sub-agent's governance controls conflict with the orchestrator's declared scope?
 
 These questions are documented in `FUTURE_WORK.md` and will be addressed in `trust-layer-multiagent`.
+
+---
+
+## 11. Deterministic vs. Probabilistic Orchestration
+
+### 11.1 The Core Distinction
+
+Every decision the agent makes falls into one of two categories:
+
+**Governance decisions** — whether a governance boundary has been crossed, whether a control has been met, whether a human approval is required. These decisions have right and wrong answers. The consequences of a wrong answer are compliance failures, audit trail gaps, or unauthorized actions.
+
+**Reasoning decisions** — which tool to call next, how to formulate a query, how to assess whether collected evidence is sufficient, how to phrase a finding. These decisions benefit from the LLM's contextual judgment. The consequences of a suboptimal answer are a less precise assessment, not a governance failure.
+
+The governing principle: **deterministic at every governance boundary, probabilistic only within bounded reasoning states.**
+
+Allowing an LLM to decide whether to skip a human approval gate is a governance failure by design. Allowing an LLM to decide how to phrase a CloudTrail query is appropriate use of its capabilities.
+
+---
+
+### 11.2 Deterministic Boundaries
+
+The following transitions are hard-coded in the LangGraph state machine. They are not subject to LLM judgment and cannot be routed around by the agent's reasoning.
+
+| Boundary | Deterministic Rule | Consequence of Violation |
+|---|---|---|
+| Sufficiency gate | Agent cannot enter drafting state without a passing sufficiency check in reasoning state | State transition rejected — FM-005 |
+| HUMAN_GATED submission | `submit_assessment_artifact` blocked until valid approval token present | PEP-1 rejects invocation |
+| DENIED tool rejection | Any tool with `autonomy_class: DENIED` rejected at pre-call gate | Run terminated |
+| Circuit breaker | Run terminated when step limit, call count, or timeout threshold reached | Hard stop — no LLM override |
+| Implicit DENY | Any unregistered tool rejected before invocation | Run terminated |
+| Evidence lineage failure | Assertion excluded from draft when lineage fields absent | PEP-3 strips assertion |
+
+In LangGraph terms, these are **direct edges** — unconditional state transitions that fire regardless of the LLM's output at the prior state.
+
+---
+
+### 11.3 Probabilistic Reasoning States
+
+The following decisions are delegated to the LLM's contextual judgment. They operate within bounded states where the governance consequences of an imprecise answer are contained.
+
+| Decision | Reasoning State | Bounds on Probabilistic Behavior |
+|---|---|---|
+| Tool selection | Planning | Only registered tools are callable — LLM selects from a constrained set |
+| Query formulation | Evidence-gathering | Parameters validated at PEP-1 before execution |
+| Evidence sufficiency assessment | Sufficiency-assessment | Determination is LLM-driven but the gate enforcement is deterministic |
+| Finding phrasing | Drafting | Output is a draft — human review is mandatory before submission |
+| Hedge calibration | Drafting | LLM-as-judge evaluates hedge appropriateness in eval — not a runtime gate |
+
+In LangGraph terms, these are **conditional edges** — routing decisions made by the LLM's output that determine which state to transition to next.
+
+---
+
+### 11.4 Why This Matters for Federal Compliance
+
+Federal compliance workflows have a specific property that makes deterministic governance boundaries non-negotiable: **the output affects real authorization decisions.** A compliance assessment that incorrectly marks a control as satisfied may inform an ATO decision, a ConMon report, or a risk acceptance by an Authorizing Official.
+
+In that context, "the LLM decided to skip the approval gate because the evidence looked sufficient" is not an acceptable audit finding. The approval gate fires deterministically because the governance requirement is not probabilistic.
+
+This also maps directly to the human oversight requirements in OMB M-24-10 and NIST AI RMF MANAGE 2.2: human oversight mechanisms must be reliable, not contingent on model behavior.
+
+---
+
+### 11.5 Mapping to the Trust Ledger
+
+The deterministic vs. probabilistic distinction is enforced through the trust ledger and state machine, not through prompting.
+
+| Mechanism | What It Enforces |
+|---|---|
+| `autonomy_class: DENIED` | Deterministic rejection — not subject to LLM routing |
+| `autonomy_class: HUMAN_GATED` | Deterministic gate — approval token required regardless of reasoning state |
+| PEP-1 pre-call validation | Deterministic checks fire before any tool executes |
+| LangGraph direct edges | State transitions at governance boundaries are unconditional |
+| LangGraph conditional edges | Routing within bounded reasoning states is LLM-driven |
+
+Prompting the agent to "always request human approval before submitting" is insufficient. The approval gate is enforced at the state machine and PEP layer — the LLM's instruction-following behavior is not the control.

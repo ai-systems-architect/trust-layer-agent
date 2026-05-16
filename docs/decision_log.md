@@ -40,3 +40,16 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 - Mixed family (two AC + two AU) — eliminated. Splitting across families reduces the coherence of the demonstration without a clear benefit. AC family as a unit is a universally understood federal concept; a mixed set requires more context to interpret.
 
 ---
+
+## DL-035 — Memory Architecture: Ephemeral Per-Run
+
+**Decision:** Agent uses ephemeral per-run memory. No persistent memory across runs. Authoritative knowledge sourced from P2 governed RAG on demand.
+**Date:** 2026-05-16
+
+**Rationale:** Ephemeral memory enforces governance clarity, audit trail integrity, and data minimization without requiring a separate purge mechanism. Each run starts with a declared scope; persistent memory would introduce state that cannot be fully attributed to a specific authorized scope declaration. Static authoritative knowledge (NIST control text, FedRAMP requirements) is provided by the retrieval layer on demand — eliminating the primary motivation for persistent memory in this use case.
+
+**Alternatives evaluated:**
+- Persistent agent memory — deferred. Creates a second state store outside the per-run audit trail, introducing provenance and compliance gaps. Relevant for multi-agent workflows in P4 where shared evidence accumulation across sub-agents is required.
+- Retrieval-augmented memory — deferred. Prior run results stored in a vector store and retrieved as context. Introduces cross-run provenance complexity without sufficient benefit in the single-agent, bounded-scope use case.
+
+---
