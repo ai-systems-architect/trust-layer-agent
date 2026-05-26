@@ -12,12 +12,12 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 
 ## Pending decisions (to be logged when made)
 
-- **DL-032 candidate — Synthetic fixture design.** IAM policy and CloudTrail
+- **DL-032 candidate — Synthetic fixture design.** [Phase 2] IAM policy and CloudTrail
   event fixture format; adversarial seed cases (prompt injection in retrieved
   evidence content, over-privileged role, dormant credential, missing MFA).
-- **DL-033 candidate — LLM provider and model for agent + judge.** Generation
+- **DL-033 candidate — LLM provider and model for agent + judge.** [Phase 2] Generation
   model for the agent itself and the LLM-as-judge tier in the eval harness.
-- **DL-034 candidate — Identity scope: mocked vs. wired.** Whether agent
+- **DL-034 candidate — Identity scope: mocked vs. wired.** [Phase 2] Whether agent
   identity / delegated authority is conceptual-only, mocked with simulated
   role assumption, or wired to real STS. Mocked is the working assumption.
 
