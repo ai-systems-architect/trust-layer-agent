@@ -9,7 +9,7 @@ architecture implements, see [framework.md](framework.md).
 ## Status
 
 **Phase 1 stub.** The governance framework (`framework.md`) is the active
-deliverable; the agent implementation under `src/` follows in Phase 2. The
+deliverable; the agent implementation under `src/` follows in Agent Implementation. The
 section headers below are commitments to address each topic as the agent
 is built.
 
@@ -17,7 +17,7 @@ is built.
 
 ## Overview
 
-(Drafted in Phase 2.) The agent is a single-agent LangGraph state machine
+(Drafted in Agent Implementation.) The agent is a single-agent LangGraph state machine
 (candidate — see decision log) that drafts NIST 800-53 Access Control
 evidence assessments from synthetic IAM and CloudTrail fixtures. Every
 tool call is gated by the trust ledger (`config/trust_ledger.yaml`);
@@ -41,7 +41,7 @@ The agent's explicit states:
 - `awaiting-human-review` — gate the artifact behind an Authorizing Official
   (or delegate) approval token before any submission.
 
-(State transition diagram and per-state PEP bindings drafted in Phase 2.)
+(State transition diagram and per-state PEP bindings drafted in Agent Implementation.)
 
 ---
 
@@ -56,7 +56,7 @@ are implicitly denied. Initial set demonstrates the full trust class spectrum:
 | `submit_assessment_artifact` | HIGH | HUMAN_GATED | Write draft assessment to designated output store; requires Authorizing Official token |
 | `modify_iam_policy` | CRITICAL | DENIED | Registered solely to demonstrate denial enforcement at the pre-call PEP |
 
-Tools added in Phase 2:
+Tools added in Agent Implementation:
 
 - `search_cloudtrail_events` — query synthetic CloudTrail fixture set; supports the AC-2 and AC-6 evidence streams (dormant credentials, over-privileged actions).
 - `lookup_compliance_requirement` — calls upstream [trust-layer-rag](https://github.com/ai-systems-architect/trust-layer-rag) retrieval for the relevant NIST 800-53 control text. This is the explicit P2 → P3 architectural bridge: the agent consumes governed RAG rather than reimplementing retrieval.
@@ -72,7 +72,7 @@ Execution identity is declared in `config/trust_ledger.yaml`:
 - **Credential source:** short-lived session
 - **Impersonation:** disallowed
 
-Mocked role assumption is in scope for Phase 2 — the agent will simulate
+Mocked role assumption is in scope for Agent Implementation — the agent will simulate
 assuming the role, the ledger will validate the role binding, and a deliberate
 out-of-scope action (e.g., attempting to call `iam:CreateUser`) will be
 rejected at the pre-call PEP to demonstrate the enforcement path.
@@ -96,13 +96,13 @@ Three PEPs are bound per tool in the trust ledger:
    or an external system. Binds to the human-review step of the state machine.
 
 PEP handler functions are bound by name in the ledger; implementations land
-under `src/peps/` in Phase 2.
+under `src/peps/` in Agent Implementation.
 
 ---
 
 ## Reasoning Trace
 
-(Drafted in Phase 2.) Langfuse-backed instrumentation on every state transition
+(Drafted in Agent Implementation.) Langfuse-backed instrumentation on every state transition
 and every tool call. Initial capture set:
 
 - Input and output tokens per state and per tool call.
@@ -118,7 +118,7 @@ audit. Retention and access controls on the trace store are governed by
 
 ## Evaluation
 
-(Drafted in Phase 3 — see [framework.md § Evaluation Methodology](framework.md).)
+(Drafted in Evaluation Suite — see [framework.md § Evaluation Methodology](framework.md).)
 
 Three independent evaluation tiers, complementary by design:
 
@@ -146,6 +146,6 @@ trust-layer-agent/
 │   ├── agent_risk_classification_matrix.md
 │   └── examples/
 │       └── governance_decision.json
-├── src/                         Agent implementation (Phase 2)
-└── eval/                        Three-tier graders (Phase 3)
+├── src/                         Agent implementation
+└── eval/                        Three-tier graders
 ```

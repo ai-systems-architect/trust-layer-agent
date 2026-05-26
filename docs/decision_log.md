@@ -12,12 +12,12 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 
 ## Pending decisions (to be logged when made)
 
-- **DL-032 candidate — Synthetic fixture design.** [Phase 2] IAM policy and CloudTrail
+- **DL-032 candidate — Synthetic fixture design.** [Agent Implementation] IAM policy and CloudTrail
   event fixture format; adversarial seed cases (prompt injection in retrieved
   evidence content, over-privileged role, dormant credential, missing MFA).
-- **DL-033 candidate — LLM provider and model for agent + judge.** [Phase 2] Generation
+- **DL-033 candidate — LLM provider and model for agent + judge.** [Agent Implementation] Generation
   model for the agent itself and the LLM-as-judge tier in the eval harness.
-- **DL-034 candidate — Identity scope: mocked vs. wired.** [Phase 2] Whether agent
+- **DL-034 candidate — Identity scope: mocked vs. wired.** [Agent Implementation] Whether agent
   identity / delegated authority is conceptual-only, mocked with simulated
   role assumption, or wired to real STS. Mocked is the working assumption.
 
@@ -31,11 +31,11 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 **Rationale:** The governance requirement — deterministic boundaries enforced as direct edges, probabilistic reasoning bounded within states — maps directly to LangGraph's explicit node/edge architecture. Direct edges enforce hard state transitions at governance boundaries (sufficiency gate, HUMAN_GATED submission, circuit breakers) without LLM override. Conditional edges bound probabilistic reasoning within declared states (tool selection, query formulation, sufficiency assessment). The framework makes the state machine visible and auditable without additional instrumentation overhead. Langfuse integration is native and well-documented. The governance pattern is framework-agnostic — it transfers to any stateful agent framework or hand-rolled implementation. LangGraph is the vehicle, not the architecture.
 
 **Alternatives evaluated:**
-- Hand-rolled state machine over Anthropic SDK directly — maximum auditability, no framework lock-in, full control over every state transition. Eliminated on LOE grounds: LangGraph absorbs the state management overhead that hand-rolled requires, without hiding the governance-critical transitions. Remains the right choice if LangGraph's reasoning trace integration proves insufficient during [Phase 2].
-- CrewAI — role-based multi-agent framework. Wrong abstraction for single-agent governance workflows. Better fit for [P4] multi-agent orchestration.
+- Hand-rolled state machine over Anthropic SDK directly — maximum auditability, no framework lock-in, full control over every state transition. Eliminated on LOE grounds: LangGraph absorbs the state management overhead that hand-rolled requires, without hiding the governance-critical transitions. Remains the right choice if LangGraph's reasoning trace integration proves insufficient during Agent Implementation.
+- CrewAI — role-based multi-agent framework. Wrong abstraction for single-agent governance workflows. Better fit for `trust-layer-multiagent` multi-agent orchestration.
 - Google ADK — Google ecosystem oriented, not compatible with AWS Bedrock stack.
 - Amazon Bedrock Agents — AWS native but manages the orchestration loop internally, making direct PEP instrumentation difficult. Governance controls would sit outside the execution path rather than inside it.
-- Pydantic AI — type-safe agent framework with strong validation story. Promising but insufficiently documented in federal production contexts. Revisit for [P4].
+- Pydantic AI — type-safe agent framework with strong validation story. Promising but insufficiently documented in federal production contexts. Revisit for `trust-layer-multiagent`.
 
 ---
 
@@ -62,7 +62,7 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 **Rationale:** Ephemeral memory enforces governance clarity, audit trail integrity, and data minimization without requiring a separate purge mechanism. Each run starts with a declared scope; persistent memory would introduce state that cannot be fully attributed to a specific authorized scope declaration. Static authoritative knowledge (NIST control text, FedRAMP requirements) is provided by the retrieval layer on demand — eliminating the primary motivation for persistent memory in this use case.
 
 **Alternatives evaluated:**
-- Persistent agent memory — deferred. Creates a second state store outside the per-run audit trail, introducing provenance and compliance gaps. Relevant for multi-agent workflows in P4 where shared evidence accumulation across sub-agents is required.
+- Persistent agent memory — deferred. Creates a second state store outside the per-run audit trail, introducing provenance and compliance gaps. Relevant for multi-agent workflows in `trust-layer-multiagent` where shared evidence accumulation across sub-agents is required.
 - Retrieval-augmented memory — deferred. Prior run results stored in a vector store and retrieved as context. Introduces cross-run provenance complexity without sufficient benefit in the single-agent, bounded-scope use case.
 
 ---

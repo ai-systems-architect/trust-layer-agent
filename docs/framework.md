@@ -158,10 +158,10 @@ Full specification: [Section 10 of framework_reference.md](framework_reference.m
 ### Framework Document (complete — Phase 1)
 All 10 sections complete: Scope, Trust Boundaries, Agent Identity (incl. Reasoning Trace), Tool-Use Governance, Failure Mode Catalog, Threat Model, Risk Classification Matrix, Evaluation Methodology, Regulatory Mapping (incl. FedRAMP ConMon), Inheritance Pattern.
 
-### Agent Implementation (planned — Phase 2)
+### Agent Implementation (planned)
 LangGraph single-agent system demonstrating the framework against AC-2, AC-3, AC-6, AC-17 controls.
 
-### Evaluation Suite (planned — Phase 3)
+### Evaluation Suite (planned)
 Three-tier evaluation: deterministic graders, LLM-as-judge, human review criteria. Covers all seven failure modes plus adversarial scenarios.
 
 ---

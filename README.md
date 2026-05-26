@@ -26,8 +26,8 @@ docs/framework.md                              Governance framework document (in
 docs/agent_risk_classification_matrix.md       Risk tier definitions
 docs/decision_log.md                           Architecture decision log
 docs/examples/governance_decision.json         Runtime governance artifact schema
-src/                                           Agent implementation (Phase 2)
-eval/                                          Evaluation suite (Phase 3)
+src/                                           Agent implementation
+eval/                                          Evaluation suite
 FUTURE_WORK.md                                 Documented extensions, not built
 ```
 
@@ -50,7 +50,7 @@ Three artifacts are the foundation before any code:
 | P1 `responsible-mlops-risk-engine` | Data and model layer | Training data, fairness, drift monitoring |
 | P2 `trust-layer-rag` | Retrieval layer | Knowledge retrieval, guardrails, PII, citation integrity |
 | P3 `trust-layer-agent` *(this project)* | Reasoning layer | Autonomous action, tool use, human oversight, audit trail |
-| P4 `trust-layer-multiagent` | Orchestration layer | Agent-to-agent trust, delegation, coordination governance |
+| `trust-layer-multiagent` | Orchestration layer | Agent-to-agent trust, delegation, coordination governance |
 
 ---
 
@@ -59,8 +59,8 @@ Three artifacts are the foundation before any code:
 | Phase | Status |
 |---|---|
 | Phase 1 — Governance Framework Document | In Progress |
-| Phase 2 — Agent Implementation | Planned |
-| Phase 3 — Evaluation Suite | Planned |
+| Agent Implementation | Planned |
+| Evaluation Suite | Planned |
 | Phase 4 — Decision Log | Running |
 
 ---

@@ -390,7 +390,7 @@ This is the architectural separation that makes ephemeral memory viable: static 
 
 #### Future Consideration
 
-Persistent memory becomes relevant in multi-agent workflows (P4) where an orchestrating agent maintains a shared evidence accumulation state across multiple specialized sub-agents operating in parallel. That pattern is outside single-agent scope and is documented in `FUTURE_WORK.md`.
+Persistent memory becomes relevant in multi-agent workflows (`trust-layer-multiagent`) where an orchestrating agent maintains a shared evidence accumulation state across multiple specialized sub-agents operating in parallel. That pattern is outside single-agent scope and is documented in `FUTURE_WORK.md`.
 
 ---
 
@@ -826,7 +826,7 @@ One scenario per failure mode FM-001 through FM-007. Each scenario is designed t
 
 ### 8.5 Operational Observability Metrics
 
-Collected via Langfuse instrumentation from Phase 2. Reported alongside evaluation results.
+Collected via Langfuse instrumentation from Agent Implementation. Reported alongside evaluation results.
 
 | Metric | Collection Point |
 |---|---|
