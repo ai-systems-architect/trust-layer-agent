@@ -12,9 +12,6 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 
 ## Pending decisions (to be logged when made)
 
-- **DL-030 candidate — Orchestration framework.** LangGraph vs. hand-rolled
-  state machine over the model SDK directly. Auditability of the reasoning
-  trace is the dominant criterion. Log when the framework choice is made.
 - **DL-032 candidate — Synthetic fixture design.** IAM policy and CloudTrail
   event fixture format; adversarial seed cases (prompt injection in retrieved
   evidence content, over-privileged role, dormant credential, missing MFA).
@@ -23,6 +20,22 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 - **DL-034 candidate — Identity scope: mocked vs. wired.** Whether agent
   identity / delegated authority is conceptual-only, mocked with simulated
   role assumption, or wired to real STS. Mocked is the working assumption.
+
+---
+
+## DL-030 — Orchestration Framework: LangGraph
+
+**Decision:** LangGraph selected as the agent orchestration framework.
+**Date:** 2026-05-26
+
+**Rationale:** The governance requirement — deterministic boundaries enforced as direct edges, probabilistic reasoning bounded within states — maps directly to LangGraph's explicit node/edge architecture. Direct edges enforce hard state transitions at governance boundaries (sufficiency gate, HUMAN_GATED submission, circuit breakers) without LLM override. Conditional edges bound probabilistic reasoning within declared states (tool selection, query formulation, sufficiency assessment). The framework makes the state machine visible and auditable without additional instrumentation overhead. Langfuse integration is native and well-documented. The governance pattern is framework-agnostic — it transfers to any stateful agent framework or hand-rolled implementation. LangGraph is the vehicle, not the architecture.
+
+**Alternatives evaluated:**
+- Hand-rolled state machine over Anthropic SDK directly — maximum auditability, no framework lock-in, full control over every state transition. Eliminated on LOE grounds: LangGraph absorbs the state management overhead that hand-rolled requires, without hiding the governance-critical transitions. Remains the right choice if LangGraph's reasoning trace integration proves insufficient during Phase 2.
+- CrewAI — role-based multi-agent framework. Wrong abstraction for single-agent governance workflows. Better fit for P4 multi-agent orchestration.
+- Google ADK — Google ecosystem oriented, not compatible with AWS Bedrock stack.
+- Amazon Bedrock Agents — AWS native but manages the orchestration loop internally, making direct PEP instrumentation difficult. Governance controls would sit outside the execution path rather than inside it.
+- Pydantic AI — type-safe agent framework with strong validation story. Promising but insufficiently documented in federal production contexts. Revisit for P4.
 
 ---
 
