@@ -117,7 +117,7 @@ The delegation boundary defines what the human principal has authorized the agen
 
 **Enforcement:** Trust ledger `execution_identity` block. Agent runs as `audit-readonly-role` with short-lived session credentials. Scope is declared at invocation, not inferred.
 
-**Violation pattern:** Agent interprets a broad task instruction as authorization to call tools outside its registered set. Addressed by the implicit-DENIED rule: any tool not in the trust ledger is rejected at the pre-call PEP gate.
+**Violation pattern:** Agent interprets a broad task instruction as authorization to call tools outside its registered set. Addressed by the implicit-DENIED rule: any tool not in the trust ledger is rejected at the pre-call Policy Enforcement Point (PEP) gate.
 
 ---
 
