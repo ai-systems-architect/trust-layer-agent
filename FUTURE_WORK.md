@@ -10,6 +10,8 @@ Scope deliberately deferred from this project. Each item below is documented to 
 
 **Identity and delegated authority — mocked → wired.** The framework specifies agent identity, scoped credentials, and impersonation prevention. The trust ledger declares the execution identity (`audit-readonly-role`, short-lived session credentials, impersonation disallowed) at the schema layer. A mocked role-assumption flow is in scope for Agent Implementation; wiring it to a real IAM role with STS session issuance is production work, not portfolio work.
 
+**Langfuse self-hosted for production.** Portfolio implementation uses Langfuse cloud Hobby tier with synthetic data only. Production deployments handling real federal data require self-hosted Langfuse to satisfy data residency and FedRAMP boundary requirements. Migration is a configuration change — the SDK and instrumentation code are identical between cloud and self-hosted.
+
 ---
 
 ### Stretch
