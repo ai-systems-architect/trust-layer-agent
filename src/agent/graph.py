@@ -44,27 +44,39 @@ MAX_ITERATIONS: int = int(os.getenv("MAX_ITERATIONS", "50"))
 MAX_EVIDENCE_RETRIES: int = 3
 
 # ── Langfuse client (optional — disabled gracefully if not configured) ─────────
+# Langfuse 2.x API: client.trace(session_id=...) → trace.span(name=...) → span.end()
+# The client initialises even without credentials (logs a warning but doesn't raise).
+# _span() wraps the full trace().span() call and falls back to _NullSpan on any error.
 try:
     from langfuse import Langfuse
     _langfuse_client: Optional[Any] = Langfuse()
-    logger.info("Langfuse instrumentation enabled")
 except Exception as _lf_exc:  # noqa: BLE001
     _langfuse_client = None
-    logger.warning("Langfuse not configured — instrumentation disabled: %s", _lf_exc)
+    logger.warning("Langfuse import failed — instrumentation disabled: %s", _lf_exc)
 
 
 class _NullSpan:
-    """No-op span returned when Langfuse is not configured."""
+    """No-op span returned when Langfuse is not configured or unavailable."""
 
     def end(self, **kwargs: Any) -> None:  # noqa: ANN401
         pass
 
 
-def _span(name: str, **kwargs: Any) -> Any:
-    """Create a Langfuse span or a no-op fallback."""
+def _span(name: str, session_id: str = "", input: Optional[Any] = None) -> Any:
+    """
+    Create a Langfuse span under a per-run trace, or return a no-op fallback.
+
+    Uses Langfuse 2.x API: client.trace(session_id=run_id).span(name, input).
+    Falls back to _NullSpan on any error so instrumentation never breaks the graph.
+    """
     if _langfuse_client is None:
         return _NullSpan()
-    return _langfuse_client.span(name=name, **kwargs)
+    try:
+        trace = _langfuse_client.trace(session_id=session_id or name)
+        return trace.span(name=name, input=input)
+    except Exception as _exc:  # noqa: BLE001
+        logger.debug("Langfuse span creation failed — using NullSpan: %s", _exc)
+        return _NullSpan()
 
 
 def _ts() -> str:
@@ -146,6 +158,9 @@ def evidence_gathering_node(state: AgentState) -> AgentState:
     try:
         state["current_node"] = "evidence_gathering"
         state["iteration_count"] = state.get("iteration_count", 0) + 1
+        # Increment retry counter here so it persists in state.
+        # Routing functions are read-only in LangGraph — mutations are discarded.
+        state["evidence_retry_count"] = state.get("evidence_retry_count", 0) + 1
 
         # TODO (Agent Implementation): LLM selects tool from registered set and
         #   formulates query parameters for each control in controls_to_assess.
@@ -410,8 +425,7 @@ def route_sufficiency(state: AgentState) -> str:
     if all_sufficient:
         return "drafting"
 
-    # Insufficient — increment retry count and loop back
-    state["evidence_retry_count"] = state.get("evidence_retry_count", 0) + 1
+    # Insufficient — loop back; retry count is incremented inside evidence_gathering_node
     return "evidence_gathering"
 
 

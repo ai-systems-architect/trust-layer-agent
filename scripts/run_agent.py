@@ -105,7 +105,12 @@ def main() -> None:
         initial_state["declared_account_id"],
     )
 
-    final_state: AgentState = graph.invoke(initial_state)
+    # recursion_limit must exceed MAX_ITERATIONS * nodes-per-cycle to allow
+    # circuit breakers to fire before LangGraph's internal limit.
+    final_state: AgentState = graph.invoke(
+        initial_state,
+        config={"recursion_limit": 200},
+    )
 
     logger.info("─" * 60)
     logger.info("Run complete — final state summary")
