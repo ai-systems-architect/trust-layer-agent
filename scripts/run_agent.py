@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import logging
 import sys
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,6 +36,8 @@ try:
 except ImportError:
     pass  # python-dotenv optional for script execution
 
+import httpx  # noqa: E402
+
 from src.agent.graph import create_graph  # noqa: E402
 from src.agent.state import AgentState  # noqa: E402
 
@@ -43,6 +46,44 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)-8s %(name)s — %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def check_p2_warmup() -> bool:
+    """
+    Check whether the P2 RAG service is up before invoking the graph.
+
+    A 200 response means P2 is healthy; a 3-second sleep follows to let
+    Presidio/spaCy finish loading before the first /retrieve call arrives.
+
+    Connection refused means P2 is not running — T-005 will hit FM-002
+    graceful degradation on every call (non-fatal, agent continues with
+    IAM and CloudTrail evidence only).
+
+    Returns:
+        True if P2 responded with HTTP 200, False otherwise.
+    """
+    p2_url = "http://localhost:8000/health"
+    try:
+        resp = httpx.get(p2_url, timeout=5.0)
+        if resp.status_code == 200:
+            logger.info(
+                "P2 RAG service is up — waiting 3 seconds for Presidio/spaCy warmup"
+            )
+            time.sleep(3)
+            return True
+        logger.warning(
+            "P2 RAG service returned HTTP %d — T-005 will degrade to FM-002 (non-fatal)",
+            resp.status_code,
+        )
+        return False
+    except httpx.ConnectError:
+        logger.warning(
+            "P2 RAG service unreachable — T-005 will degrade to FM-002 (non-fatal)"
+        )
+        return False
+    except Exception as exc:
+        logger.warning("P2 health check error — T-005 will degrade to FM-002: %s", exc)
+        return False
 
 
 def make_initial_state() -> AgentState:
@@ -96,6 +137,8 @@ def main() -> None:
     """Run the agent with a synthetic test invocation and print final state."""
     logger.info("Initialising trust-layer-agent graph")
     graph = create_graph()
+
+    check_p2_warmup()
 
     initial_state = make_initial_state()
     logger.info(
