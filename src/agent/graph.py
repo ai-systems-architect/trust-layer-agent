@@ -311,7 +311,12 @@ def sufficiency_assessment_node(state: AgentState) -> AgentState:
             "For each control, evaluate:\n"
             "1. Is there at least one IAM policy document showing role permissions?\n"
             "2. Is there at least one CloudTrail event showing access activity?\n"
-            "3. Does the evidence clearly address the control's key requirements?\n\n"
+            "3. Does the evidence clearly address the control's key requirements?\n"
+            "4. Does the evidence cover the control's key requirements?\n\n"
+            "Important: Sufficient means there is enough evidence to make a compliance "
+            "determination — including a NON-COMPLIANT determination. A documented "
+            "compliance gap, violation, or finding IS sufficient evidence. Do not require "
+            "evidence of compliance to mark evidence as sufficient.\n\n"
             "Respond in JSON only — no markdown fences, no prose before or after:\n"
             '{"sufficient": true or false, '
             '"missing_fields": ["list of what is missing, or [] if sufficient"], '
