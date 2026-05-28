@@ -27,10 +27,11 @@ References:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from langgraph.graph import StateGraph, END
 
@@ -84,6 +85,32 @@ def _ts() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _parse_llm_json(text: str) -> Dict[str, Any]:
+    """
+    Parse JSON from an LLM response, stripping any markdown code fences.
+
+    LLMs sometimes wrap JSON in ```json … ``` even when instructed not to.
+    This helper strips the fences before calling json.loads so callers don't
+    need to guard against both formats.
+    """
+    text = text.strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        # Walk backward to find the closing ``` line
+        end_idx = len(lines) - 1
+        while end_idx > 0 and not lines[end_idx].strip().startswith("```"):
+            end_idx -= 1
+        text = "\n".join(lines[1:end_idx]).strip()
+    return json.loads(text)
+
+
+# ── Module-level trust ledger (set by build_graph, read by nodes) ─────────────
+# Nodes are top-level functions — they cannot close over build_graph()'s local
+# trust_ledger variable. A module-level reference is the simplest solution
+# without restructuring the entire graph as a class.
+_trust_ledger: Optional[Any] = None  # type: TrustLedger, set by build_graph()
+
+
 # ── Nodes ──────────────────────────────────────────────────────────────────────
 
 def planning_node(state: AgentState) -> AgentState:
@@ -134,17 +161,21 @@ def planning_node(state: AgentState) -> AgentState:
 
 def evidence_gathering_node(state: AgentState) -> AgentState:
     """
-    Evidence-gathering node — invoke registered tools to collect control evidence.
+    Evidence-gathering node — invoke all three registered tools for each control.
 
-    Deterministic: every tool call wrapped by PEP-1 (pre-call) and PEP-2
-    (post-call). Tool selection and query formulation are probabilistic
-    (LLM-driven) but bounded to the registered tool set (Framework Section 11.3).
+    T-001 (query_iam_policies) and T-004 (search_cloudtrail_events) load from
+    local fixtures — always succeed. T-005 (lookup_compliance_requirement) calls
+    the P2 RAG bridge — may return FM-002 graceful degradation if P2 is not
+    running; evidence from T-001/T-004 is retained regardless.
 
-    Registered tools (config/trust_ledger.yaml):
-        T-001 query_iam_policies          LOW / AUTONOMOUS
-        search_cloudtrail_events          LOW / AUTONOMOUS   (Agent Implementation)
-        lookup_compliance_requirement     LOW / AUTONOMOUS   (Agent Implementation,
-                                                              trust-layer-rag bridge)
+    PEP-1 and PEP-2 are enforced inside each tool. Outcomes are recorded in
+    state["pep_outcomes"] via record_pep_outcome() calls within the tools.
+
+    Evidence from previous retry cycles accumulates — containers are initialized
+    with setdefault so existing items are never discarded on retry.
+
+    Deterministic boundary — trust ledger enforces tool permissions.
+    Probabilistic — in future iterations, LLM drives query formulation per control.
     """
     span = _span(
         name="evidence_gathering",
@@ -162,45 +193,100 @@ def evidence_gathering_node(state: AgentState) -> AgentState:
         # Routing functions are read-only in LangGraph — mutations are discarded.
         state["evidence_retry_count"] = state.get("evidence_retry_count", 0) + 1
 
-        # TODO (Agent Implementation): LLM selects tool from registered set and
-        #   formulates query parameters for each control in controls_to_assess.
-        # TODO (Agent Implementation): For each tool call:
-        #   a. Call pep1_pre_call(state, ledger, tool_name, args).
-        #   b. Record PEP-1 outcome via record_pep_outcome(state, result).
-        #   c. If PEP-1 DENIED: log, append to state["errors"], continue.
-        #   d. Execute tool call.
-        #   e. Call pep2_post_call(state, tool_name, raw_result).
-        #   f. Record PEP-2 outcome via record_pep_outcome(state, result).
-        #   g. Append sanitized_result to state["evidence"][control_id].
-        #   h. Increment state["tool_call_counts"][tool_name].
-        # TODO (Agent Implementation): Record tool invocation reasoning in
-        #   reasoning trace (tool selected, parameters, rationale).
+        if _trust_ledger is None:
+            state["errors"].append(
+                "evidence_gathering_node: trust ledger not initialized — "
+                "call build_graph() before invoking the graph"
+            )
+            return state
 
+        from src.tools import (  # noqa: PLC0415
+            lookup_compliance_requirement,
+            query_iam_policies,
+            search_cloudtrail_events,
+        )
+
+        # Carry forward evidence from prior retries; init containers for all controls.
+        evidence: Dict[str, Any] = {
+            ctrl: list(items) for ctrl, items in state["evidence"].items()
+        }
+        for ctrl in state["controls_to_assess"]:
+            evidence.setdefault(ctrl, [])
+
+        tool_call_counts = dict(state["tool_call_counts"])
+        errors = list(state["errors"])
+
+        # ── T-001: IAM policies (AUTONOMOUS / LOW) ────────────────────────────
+        iam_items, iam_errors = query_iam_policies(
+            state=state, trust_ledger=_trust_ledger
+        )
+        tool_call_counts["T-001"] = tool_call_counts.get("T-001", 0) + 1
+        for item in iam_items:
+            cid = item["control_id"]
+            if cid in evidence:
+                evidence[cid].append(item)
+        errors.extend(iam_errors)
+
+        # ── T-004: CloudTrail events (AUTONOMOUS / LOW) ───────────────────────
+        ct_items, ct_errors = search_cloudtrail_events(
+            state=state, trust_ledger=_trust_ledger
+        )
+        tool_call_counts["T-004"] = tool_call_counts.get("T-004", 0) + 1
+        for item in ct_items:
+            cid = item["control_id"]
+            if cid in evidence:
+                evidence[cid].append(item)
+        errors.extend(ct_errors)
+
+        # ── T-005: Compliance requirements from P2 RAG (one call per control) ─
+        # FM-002: P2 unreachable is a degraded condition — log and continue.
+        # Missing compliance text is surfaced in sufficiency_results.missing_fields.
+        for ctrl in state["controls_to_assess"]:
+            req_items, req_errors = lookup_compliance_requirement(
+                state=state, trust_ledger=_trust_ledger, control_ids=[ctrl]
+            )
+            tool_call_counts["T-005"] = tool_call_counts.get("T-005", 0) + 1
+            evidence[ctrl].extend(req_items)
+            errors.extend(req_errors)
+
+        state["evidence"] = evidence
+        state["tool_call_counts"] = tool_call_counts
+        state["errors"] = errors
+
+        evidence_counts = {k: len(v) for k, v in evidence.items()}
         logger.info(
-            "evidence_gathering_node: run_id=%s retry=%d",
+            "evidence_gathering_node: run_id=%s counts=%s pep_outcomes=%d errors=%d",
             state["run_id"],
-            state.get("evidence_retry_count", 0),
+            evidence_counts,
+            len(state.get("pep_outcomes", [])),
+            len(errors),
         )
         return state
     finally:
         span.end(output={
-            "controls_with_evidence": list(state.get("evidence", {}).keys()),
+            "evidence_counts": {
+                k: len(v) for k, v in state.get("evidence", {}).items()
+            },
             "tool_call_counts": state.get("tool_call_counts", {}),
+            "pep_outcomes": len(state.get("pep_outcomes", [])),
         })
 
 
 def sufficiency_assessment_node(state: AgentState) -> AgentState:
     """
-    Sufficiency-assessment node — judge whether evidence supports an assessment.
+    Sufficiency-assessment node — LLM judges whether collected evidence
+    is adequate to support a compliance determination for each control.
 
-    The gate enforcement is deterministic (route_sufficiency routing function).
-    The sufficiency determination itself is probabilistic — LLM evaluates
-    evidence quality per control (Framework Section 11.3).
+    LLM assessment is probabilistic. Gate enforcement is deterministic:
+    route_sufficiency() checks that all controls report sufficient=True
+    before routing to drafting — the LLM cannot bypass this (FM-005 prevention).
 
-    FM-005 guard: the routing function enforces that drafting is unreachable
-    unless all controls report sufficient=True in sufficiency_results.
-    The LLM cannot bypass this by asserting sufficiency in its output text.
+    Evidence with 0 items short-circuits to sufficient=False without an LLM call.
+    LLM failures are caught per-control and recorded as sufficient=False with
+    a failure_reason, so one bad LLM call cannot silently pass the gate.
     """
+    from src.agent.llm import get_llm, invoke_with_logging  # noqa: PLC0415
+
     span = _span(
         name="sufficiency_assessment",
         session_id=state["run_id"],
@@ -216,21 +302,97 @@ def sufficiency_assessment_node(state: AgentState) -> AgentState:
         state["current_node"] = "sufficiency_assessment"
         state["iteration_count"] = state.get("iteration_count", 0) + 1
 
-        # TODO (Agent Implementation): For each control in controls_to_assess:
-        #   LLM evaluates whether state["evidence"][control_id] is sufficient
-        #   to support an assessment for that control.
-        # TODO (Agent Implementation): Populate state["sufficiency_results"]:
-        #   {control_id: {"sufficient": bool, "rationale": str, "gaps": list}}
-        # TODO (Agent Implementation): Record sufficiency determination in
-        #   reasoning trace with evidence item counts (Framework Section 3.6).
+        llm = get_llm()
+        sufficiency_results: Dict[str, Any] = {}
 
+        _SYSTEM_PROMPT = (
+            "You are a federal compliance assessor evaluating whether collected "
+            "evidence is sufficient to assess a NIST 800-53 control.\n\n"
+            "For each control, evaluate:\n"
+            "1. Is there at least one IAM policy document showing role permissions?\n"
+            "2. Is there at least one CloudTrail event showing access activity?\n"
+            "3. Does the evidence clearly address the control's key requirements?\n\n"
+            "Respond in JSON only — no markdown fences, no prose before or after:\n"
+            '{"sufficient": true or false, '
+            '"missing_fields": ["list of what is missing, or [] if sufficient"], '
+            '"rationale": "one sentence explanation"}'
+        )
+
+        for control_id in state["controls_to_assess"]:
+            evidence_items = state["evidence"].get(control_id, [])
+
+            # Short-circuit: no evidence → insufficient, no LLM call needed
+            if not evidence_items:
+                sufficiency_results[control_id] = {
+                    "control_id": control_id,
+                    "sufficient": False,
+                    "evidence_count": 0,
+                    "missing_fields": [
+                        "iam_policy", "cloudtrail_event", "compliance_requirement"
+                    ],
+                    "rationale": "No evidence collected for this control.",
+                }
+                continue
+
+            evidence_summary = "\n\n".join(
+                f"Source: {item['source_uri']}\n{item['text'][:500]}"
+                for item in evidence_items[:6]
+            )
+
+            user_prompt = (
+                f"Control: {control_id}\n\n"
+                f"Evidence collected ({len(evidence_items)} items):\n\n"
+                f"{evidence_summary}\n\n"
+                f"Is this evidence sufficient to assess {control_id}? "
+                "Respond in JSON only."
+            )
+
+            try:
+                response_text, _ = invoke_with_logging(
+                    llm=llm,
+                    system_prompt=_SYSTEM_PROMPT,
+                    user_prompt=user_prompt,
+                    run_id=state["run_id"],
+                    node_name=f"sufficiency_{control_id}",
+                )
+                result = _parse_llm_json(response_text)
+                sufficiency_results[control_id] = {
+                    "control_id": control_id,
+                    "sufficient": bool(result.get("sufficient", False)),
+                    "evidence_count": len(evidence_items),
+                    "missing_fields": result.get("missing_fields", []),
+                    "rationale": result.get("rationale", ""),
+                }
+            except Exception as exc:
+                logger.error(
+                    "sufficiency_assessment_node: LLM error for %s run_id=%s: %s",
+                    control_id, state["run_id"], exc,
+                )
+                sufficiency_results[control_id] = {
+                    "control_id": control_id,
+                    "sufficient": False,
+                    "evidence_count": len(evidence_items),
+                    "missing_fields": ["llm_assessment_failed"],
+                    "rationale": f"Sufficiency assessment error: {exc}",
+                }
+
+        state["sufficiency_results"] = sufficiency_results
+        all_sufficient = all(
+            r.get("sufficient", False) for r in sufficiency_results.values()
+        )
         logger.info(
-            "sufficiency_assessment_node: run_id=%s", state["run_id"]
+            "sufficiency_assessment_node: run_id=%s all_sufficient=%s results=%s",
+            state["run_id"],
+            all_sufficient,
+            {k: v.get("sufficient") for k, v in sufficiency_results.items()},
         )
         return state
     finally:
         span.end(output={
-            "sufficiency_results": state.get("sufficiency_results", {}),
+            "sufficiency_results": {
+                k: v.get("sufficient")
+                for k, v in state.get("sufficiency_results", {}).items()
+            },
         })
 
 
@@ -468,8 +630,8 @@ def build_graph(trust_ledger: TrustLedger) -> Any:
     """
     Build and compile the LangGraph state machine.
 
-    The trust_ledger is loaded at graph initialisation. Nodes that perform
-    tool calls will receive the ledger via the configurable dict on invoke().
+    Sets the module-level _trust_ledger reference so that evidence_gathering_node
+    and sufficiency_assessment_node can access it without LangGraph config threading.
 
     Direct edges (unconditional — Framework Section 11.2):
         planning            → evidence_gathering
@@ -481,6 +643,9 @@ def build_graph(trust_ledger: TrustLedger) -> Any:
         sufficiency_assessment → {evidence_gathering, drafting, circuit_breaker}
         awaiting_human_review  → {END, drafting}
     """
+    global _trust_ledger
+    _trust_ledger = trust_ledger
+
     graph: StateGraph = StateGraph(AgentState)
 
     # Register nodes
