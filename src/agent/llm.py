@@ -19,6 +19,7 @@ import logging
 import os
 from typing import Dict, Tuple
 
+from botocore.config import Config
 from langchain_aws import ChatBedrock
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -36,7 +37,16 @@ def get_llm() -> ChatBedrock:
 
     temperature=0 enforces deterministic, structured output for governance
     assessments. max_tokens=4096 accommodates full evidence summaries.
+
+    read_timeout=300 allows up to 5 minutes for large drafting responses
+    (evidence summary + 4-control assessment can generate 2000+ output tokens).
+    The botocore default of 60 s is too short for the drafting node.
     """
+    bedrock_config = Config(
+        read_timeout=300,
+        connect_timeout=30,
+        retries={"max_attempts": 2, "mode": "standard"},
+    )
     return ChatBedrock(
         model_id=BEDROCK_MODEL_ID,
         region_name=AWS_REGION,
@@ -44,6 +54,7 @@ def get_llm() -> ChatBedrock:
             "temperature": 0,
             "max_tokens": 4096,
         },
+        config=bedrock_config,
     )
 
 

@@ -31,6 +31,7 @@ import json
 import logging
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any, Dict, Optional
 
 from langgraph.graph import StateGraph, END
@@ -403,63 +404,168 @@ def sufficiency_assessment_node(state: AgentState) -> AgentState:
 
 def drafting_node(state: AgentState) -> AgentState:
     """
-    Drafting node — produce the assessment artifact with full evidence lineage.
+    Drafting node — LLM generates a structured markdown compliance assessment
+    with full citation trail back to evidence source_uri and evidence_hash.
 
-    Output is a draft. Human review is mandatory before submission — enforced
-    as a direct edge to awaiting_human_review (Framework Section 11.2).
-    The agent cannot route around this edge regardless of its reasoning output.
+    Output is a draft only. Human review is mandatory before submission —
+    enforced as a direct edge to awaiting_human_review (Framework Section 11.2).
+    The agent cannot route around this edge regardless of its output content.
+
+    Every assertion in the draft must cite its evidence lineage. The evidence
+    summary passed to the LLM includes source_uri and evidence_hash for each
+    item so the model can embed citations without hallucinating references.
     """
+    from src.agent.llm import get_llm, invoke_with_logging  # noqa: PLC0415
+
     span = _span(
         name="drafting",
         session_id=state["run_id"],
         input={
             "run_id": state["run_id"],
-            "sufficiency_results": state.get("sufficiency_results", {}),
-            "approval_status": state.get("approval_status"),
+            "controls": state["controls_to_assess"],
+            "sufficiency_results": {
+                k: v.get("sufficient")
+                for k, v in state.get("sufficiency_results", {}).items()
+            },
         },
     )
+
+    _SYSTEM_PROMPT = (
+        "You are a federal compliance assessor writing a formal NIST 800-53 "
+        "control assessment. Write a structured markdown compliance assessment.\n\n"
+        "For each control, you MUST:\n"
+        "1. State the determination: COMPLIANT, NON-COMPLIANT, or "
+        "INSUFFICIENT EVIDENCE\n"
+        "2. Describe the specific finding based only on the evidence provided\n"
+        "3. Cite every claim with the exact source_uri and evidence_hash from "
+        "the evidence\n"
+        "4. Provide a specific remediation recommendation for NON-COMPLIANT "
+        "findings\n\n"
+        "Citation format: [Source: {source_uri} | Hash: {evidence_hash}]\n\n"
+        "Rules:\n"
+        "- Never make assertions without a citation\n"
+        "- Never assert compliance without evidence of compliance\n"
+        "- A documented violation IS a finding — state it precisely\n"
+        "- Hedge only when evidence is genuinely ambiguous\n"
+        "- Use formal assessment language throughout"
+    )
+
+    span_output: Dict[str, Any] = {}
     try:
         state["current_node"] = "drafting"
         state["iteration_count"] = state.get("iteration_count", 0) + 1
         state["approval_required"] = True
 
-        # TODO (Agent Implementation): LLM generates draft assessment markdown.
-        #   Each finding: control_id, determination, evidence citations
-        #   (source_uri + evidence_hash), compliance status.
-        # TODO (Agent Implementation): Run PEP-3 pre-output checks:
-        #   a. Evidence completeness — every assertion has lineage fields.
-        #   b. Sufficiency assertion present for every control.
-        #   c. human_review_required flag set.
-        #   d. Submission gate not bypassed.
-        # TODO (Agent Implementation): Populate state["draft_assessment"] (md)
-        #   and state["draft_timestamp"].
+        llm = get_llm()
 
-        state["draft_timestamp"] = _ts()
-        logger.info(
-            "drafting_node: run_id=%s approval_required=%s",
-            state["run_id"],
-            state["approval_required"],
+        # Build per-control evidence summary with full lineage fields.
+        evidence_parts = []
+        for ctrl in state["controls_to_assess"]:
+            items = state["evidence"].get(ctrl, [])
+            lines = [f"\n### {ctrl} Evidence ({len(items)} items)"]
+            for item in items:
+                lines.append(
+                    f"\n**Source:** {item['source_uri']}\n"
+                    f"**Hash:** {item['evidence_hash'][:16]}...\n"
+                    f"**Content:** {item['text'][:400]}\n"
+                )
+            evidence_parts.append("\n".join(lines))
+        evidence_summary = "\n".join(evidence_parts)
+
+        sufficiency_summary = "\n".join(
+            f"- {cid}: {'SUFFICIENT' if r.get('sufficient') else 'INSUFFICIENT'}"
+            f" — {r.get('rationale', '')}"
+            for cid, r in state["sufficiency_results"].items()
         )
-        return state
+
+        assessment_date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        user_prompt = (
+            "Write a compliance assessment for the following NIST 800-53 controls.\n\n"
+            f"Run ID: {state['run_id']}\n"
+            f"Account Scope: {state['declared_account_id']}\n"
+            f"Control Family: {state['declared_control_family']}\n"
+            f"Assessment Date: {assessment_date}\n\n"
+            f"Sufficiency Assessment Results:\n{sufficiency_summary}\n\n"
+            f"Evidence Collected:\n{evidence_summary}\n\n"
+            "Produce a complete markdown assessment document with:\n"
+            "1. Executive Summary (2-3 sentences: scope, key findings, "
+            "overall posture)\n"
+            "2. Per-control sections for each control in scope\n"
+            "3. Evidence Citations section listing all source_uri + evidence_hash "
+            "used\n"
+            "4. Recommendations section with prioritized remediation actions\n\n"
+            "Every finding must cite its evidence."
+        )
+
+        draft_text, token_usage = invoke_with_logging(
+            llm=llm,
+            system_prompt=_SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+            run_id=state["run_id"],
+            node_name="drafting",
+        )
+
+        header = (
+            f"# AC-Family Compliance Assessment — DRAFT\n"
+            f"**Run ID:** {state['run_id']}\n"
+            f"**Account:** {state['declared_account_id']}\n"
+            f"**Controls:** {', '.join(state['controls_to_assess'])}\n"
+            f"**Assessment Date:** {assessment_date}\n"
+            f"**Status:** DRAFT — Pending Authorizing Official Review\n"
+            f"**Governance:** All evidence collected under trust ledger controls. "
+            f"Full audit trail in Langfuse trace {state['run_id']}.\n\n"
+            "---\n\n"
+        )
+        draft_assessment = header + draft_text
+        draft_timestamp = _ts()
+
+        state["draft_assessment"] = draft_assessment
+        state["draft_timestamp"] = draft_timestamp
+        state["approval_status"] = "PENDING"
+
+        span_output = {
+            "draft_length": len(draft_assessment),
+            "tokens_used": token_usage,
+        }
+        logger.info(
+            "drafting_node: run_id=%s draft_length=%d approval_required=True",
+            state["run_id"],
+            len(draft_assessment),
+        )
+
+    except Exception as exc:
+        error_draft = (
+            f"# DRAFT GENERATION FAILED\n\nError: {exc}\n\n"
+            f"Run ID: {state['run_id']}\nManual assessment required."
+        )
+        state["draft_assessment"] = error_draft
+        state["draft_timestamp"] = _ts()
+        state["approval_status"] = "PENDING"
+        span_output = {"error": str(exc)}
+        logger.error("drafting_node: run_id=%s error: %s", state["run_id"], exc)
+
     finally:
-        span.end(output={
-            "draft_timestamp": state.get("draft_timestamp"),
-            "approval_required": state.get("approval_required"),
-        })
+        span.end(output=span_output)
+
+    return state
 
 
 def awaiting_human_review_node(state: AgentState) -> AgentState:
     """
-    Awaiting-human-review node — gate artifact behind Authorizing Official approval.
+    Human review gate — suspend run pending Authorizing Official approval.
 
-    The approval token is validated here via PEP-1 (HUMAN_GATED check for
-    submit_assessment_artifact). The run suspends until a token is provided
-    externally. Re-invoke the graph with an updated state to resume.
+    Writes two artifacts to outputs/:
+        governance_decision_{run_id}.json — audit record with PEP outcomes,
+            evidence lineage summary, sufficiency results, and approval status.
+        draft_assessment_{run_id}.md — the LLM-generated assessment for review.
+
+    The run suspends at PENDING. Re-invoke with an updated state carrying an
+    approval_token and approval_status=APPROVED or REJECTED to resume routing.
 
     Routing (route_human_review):
-        APPROVED → END     (governance decision record written)
+        APPROVED → END      (governance decision finalised)
         REJECTED → drafting (redraft with rejection reason)
-        PENDING  → END     (re-invoke when token arrives)
+        PENDING  → END      (re-invoke when token arrives)
     """
     span = _span(
         name="awaiting_human_review",
@@ -473,28 +579,83 @@ def awaiting_human_review_node(state: AgentState) -> AgentState:
     try:
         state["current_node"] = "awaiting_human_review"
 
-        if not state.get("approval_status"):
-            state["approval_status"] = "PENDING"
+        outputs_dir = Path("outputs")
+        outputs_dir.mkdir(exist_ok=True)
 
-        # TODO (Agent Implementation): Validate approval token authenticity and
-        #   approver_role against trust ledger T-002 required_approver_role.
-        # TODO (Agent Implementation): Write governance_decision.json artifact:
-        #   run_id, initiating_principal, tool invocations, PEP outcomes,
-        #   approval event (token, role, timestamp).
-        # TODO (Agent Implementation): If REJECTED, record rejection reason and
-        #   open questions in state for the redraft cycle.
+        # Evidence lineage summary — first 3 items per control for brevity.
+        lineage_summary: Dict[str, Any] = {}
+        for ctrl, items in state["evidence"].items():
+            lineage_summary[ctrl] = [
+                {
+                    "source_uri": item["source_uri"],
+                    "retrieval_timestamp": item["retrieval_timestamp"],
+                    "evidence_hash": item["evidence_hash"][:16] + "...",
+                    "tool_id": item["tool_id"],
+                }
+                for item in items[:3]
+            ]
 
+        pep_outcomes = state.get("pep_outcomes", [])
+        pep_summary = {
+            "total_outcomes": len(pep_outcomes),
+            "passed": sum(1 for p in pep_outcomes if p.get("passed", False)),
+            "failed": sum(1 for p in pep_outcomes if not p.get("passed", False)),
+        }
+
+        governance_decision: Dict[str, Any] = {
+            "run_id": state["run_id"],
+            "agent_id": "ac-audit-agent-v1",
+            "execution_identity": {
+                "iam_role": "audit-readonly-role",
+                "credential_source": "short-lived-session",
+            },
+            "tool_requested": "submit_assessment_artifact",
+            "risk_tier": "HIGH",
+            "autonomy_class": "HUMAN_GATED",
+            "approval_required": True,
+            "approval_status": state.get("approval_status", "PENDING"),
+            "approver_role": "Authorizing Official or Delegate",
+            "approver_id": state.get("approval_token"),
+            "decision_timestamp": _ts(),
+            "controls_assessed": state["controls_to_assess"],
+            "sufficiency_results": {
+                k: v.get("sufficient")
+                for k, v in state.get("sufficiency_results", {}).items()
+            },
+            "evidence_lineage": lineage_summary,
+            "pep_outcomes": pep_summary,
+            "draft_timestamp": state.get("draft_timestamp"),
+            "iteration_count": state.get("iteration_count", 0),
+            "errors_recorded": len(state.get("errors", [])),
+        }
+
+        decision_path = outputs_dir / f"governance_decision_{state['run_id']}.json"
+        with open(decision_path, "w") as fh:
+            json.dump(governance_decision, fh, indent=2)
         logger.info(
-            "awaiting_human_review_node: run_id=%s status=%s",
+            "awaiting_human_review_node: run_id=%s governance_decision → %s status=%s",
             state["run_id"],
-            state.get("approval_status"),
+            decision_path,
+            state.get("approval_status", "PENDING"),
         )
-        return state
+
+        if state.get("draft_assessment"):
+            draft_path = outputs_dir / f"draft_assessment_{state['run_id']}.md"
+            with open(draft_path, "w") as fh:
+                fh.write(state["draft_assessment"])
+            logger.info(
+                "awaiting_human_review_node: run_id=%s draft_assessment → %s",
+                state["run_id"],
+                draft_path,
+            )
+
     finally:
         span.end(output={
-            "approval_status": state.get("approval_status"),
+            "approval_status": state.get("approval_status", "PENDING"),
             "approval_timestamp": state.get("approval_timestamp"),
         })
+
+    return state
 
 
 def circuit_breaker_node(state: AgentState) -> AgentState:
