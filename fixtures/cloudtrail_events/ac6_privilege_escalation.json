@@ -1,0 +1,27 @@
+{
+  "Records": [
+    {
+      "eventTime": "2025-02-20T11:12:44Z",
+      "eventName": "AttachRolePolicy",
+      "userIdentity": {
+        "type": "IAMRole",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "arn": "arn:aws:iam::123456789:role/DeveloperRole",
+            "userName": "DeveloperRole"
+          }
+        }
+      },
+      "requestParameters": {
+        "roleName": "DeveloperRole",
+        "policyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
+      },
+      "responseElements": null,
+      "errorCode": "AccessDenied",
+      "finding": "privilege_escalation_attempt",
+      "control_id": "AC-6",
+      "description": "DeveloperRole attempted to attach AdministratorAccess to itself. Blocked by IAM boundary. AC-6 least privilege controls prevented escalation — but attempt indicates misconfigured or malicious actor."
+    }
+  ]
+}

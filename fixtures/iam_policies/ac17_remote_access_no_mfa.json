@@ -1,0 +1,26 @@
+{
+  "RoleName": "RemoteAccessRole",
+  "RoleId": "AROAWWWWWWWWWWWWWWWWW",
+  "Arn": "arn:aws:iam::123456789:role/RemoteAccessRole",
+  "AttachedPolicies": [
+    {
+      "PolicyName": "RemoteAccessPolicy",
+      "PolicyArn": "arn:aws:iam::123456789:policy/RemoteAccessPolicy"
+    }
+  ],
+  "PolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": ["ec2:DescribeInstances", "ssm:StartSession"],
+        "Resource": "*",
+        "Condition": {}
+      }
+    ]
+  },
+  "MFAEnabled": false,
+  "finding": "remote_access_no_mfa",
+  "control_id": "AC-17",
+  "description": "Remote access role permits SSM session start without MFA condition. Violates AC-17 remote access controls — MFA required for all remote access paths."
+}

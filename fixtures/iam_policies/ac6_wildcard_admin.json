@@ -1,0 +1,25 @@
+{
+  "RoleName": "LegacyAdminRole",
+  "RoleId": "AROAZZZZZZZZZZZZZZZZZ",
+  "Arn": "arn:aws:iam::123456789:role/LegacyAdminRole",
+  "AttachedPolicies": [
+    {
+      "PolicyName": "AdministratorAccess",
+      "PolicyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
+    }
+  ],
+  "PolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": "*",
+        "Resource": "*"
+      }
+    ]
+  },
+  "LastUsed": "2024-11-15T00:00:00Z",
+  "finding": "wildcard_admin",
+  "control_id": "AC-6",
+  "description": "Legacy admin role with full AdministratorAccess — Action:* Resource:*. Directly violates AC-6 least privilege. Last used 6+ months ago — candidate for removal."
+}

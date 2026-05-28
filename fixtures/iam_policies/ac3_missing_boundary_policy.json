@@ -1,0 +1,20 @@
+{
+  "RoleName": "DeveloperRole",
+  "RoleId": "AROAYYYYYYYYYYYYYYYYY",
+  "Arn": "arn:aws:iam::123456789:role/DeveloperRole",
+  "AttachedPolicies": [],
+  "PolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": ["iam:CreateRole", "iam:AttachRolePolicy"],
+        "Resource": "*"
+      }
+    ]
+  },
+  "PermissionsBoundary": null,
+  "finding": "missing_permissions_boundary",
+  "control_id": "AC-3",
+  "description": "Developer role can create roles and attach policies without a permissions boundary. Violates AC-3 access enforcement — no boundary prevents privilege escalation path."
+}

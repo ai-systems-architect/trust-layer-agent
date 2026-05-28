@@ -1,0 +1,24 @@
+{
+  "RoleName": "DataAnalystRole",
+  "RoleId": "AROAXXXXXXXXXXXXXXXXX",
+  "Arn": "arn:aws:iam::123456789:role/DataAnalystRole",
+  "AttachedPolicies": [
+    {
+      "PolicyName": "DataAnalystPolicy",
+      "PolicyArn": "arn:aws:iam::123456789:policy/DataAnalystPolicy"
+    }
+  ],
+  "PolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": ["s3:*", "dynamodb:*", "ec2:*"],
+        "Resource": "*"
+      }
+    ]
+  },
+  "finding": "over_privileged",
+  "control_id": "AC-2",
+  "description": "Role grants wildcard actions across S3, DynamoDB, and EC2. Violates least privilege principle under AC-2 account management requirements."
+}

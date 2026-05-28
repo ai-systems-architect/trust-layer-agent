@@ -1,0 +1,27 @@
+{
+  "Records": [
+    {
+      "eventTime": "2025-01-15T14:45:33Z",
+      "eventName": "GetObject",
+      "userIdentity": {
+        "type": "IAMRole",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "arn": "arn:aws:iam::123456789:role/DeveloperRole",
+            "userName": "DeveloperRole"
+          }
+        }
+      },
+      "requestParameters": {
+        "bucketName": "prod-sensitive-data",
+        "key": "pii/customer-records.csv"
+      },
+      "errorCode": "AccessDenied",
+      "errorMessage": "Access Denied",
+      "finding": "unauthorized_access_attempt",
+      "control_id": "AC-3",
+      "description": "DeveloperRole attempted to access PII data bucket and was denied. AC-3 access enforcement working but repeated attempts indicate misconfigured application or insider threat indicator."
+    }
+  ]
+}

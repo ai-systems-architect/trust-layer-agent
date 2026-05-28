@@ -1,0 +1,28 @@
+{
+  "Records": [
+    {
+      "eventTime": "2025-03-10T08:30:22Z",
+      "eventName": "StartSession",
+      "userIdentity": {
+        "type": "IAMRole",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "arn": "arn:aws:iam::123456789:role/RemoteAccessRole",
+            "userName": "RemoteAccessRole"
+          }
+        },
+        "mfaAuthenticated": "false"
+      },
+      "requestParameters": {
+        "target": "i-0abc123def456789"
+      },
+      "responseElements": {
+        "sessionId": "session-0xyz987"
+      },
+      "finding": "remote_session_without_mfa",
+      "control_id": "AC-17",
+      "description": "SSM session initiated via RemoteAccessRole without MFA authentication. AC-17 requires MFA for all remote access. Session was permitted — active compliance gap."
+    }
+  ]
+}

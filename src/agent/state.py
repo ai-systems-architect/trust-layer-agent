@@ -19,6 +19,25 @@ from typing import Any, Dict, List, Optional
 from typing import TypedDict
 
 
+class EvidenceItem(TypedDict):
+    """
+    Single evidence item produced by a registered tool and passed through PEP-2.
+
+    Required lineage fields (source_uri, retrieval_timestamp, evidence_hash)
+    are validated by PEP2Sanitizer before the item enters agent reasoning state.
+    Missing any of these fields causes PEP-2 to reject the item (FM-001 mitigation).
+    """
+
+    control_id: str
+    source_uri: str           # canonical URI — fixture path or real AWS resource ARN
+    retrieval_timestamp: str  # ISO 8601 UTC
+    evidence_hash: str        # SHA-256 of raw content for tamper detection
+    text: str                 # JSON or text content of the evidence
+    relevance_score: float    # 0.0–1.0; 1.0 for exact fixture match
+    framework: str            # e.g. "NIST-800-53"
+    tool_id: str              # trust ledger tool_id (T-001, T-002, …)
+
+
 class AgentState(TypedDict):
     """
     Ephemeral run-scoped state for the governance agent.
@@ -60,7 +79,7 @@ class AgentState(TypedDict):
     # ── Governance instrumentation ────────────────────────────────────────
     # pep_outcomes: list of PEP result dicts appended on every gate check.
     pep_outcomes: List[Dict[str, Any]]
-    # tool_call_counts: {tool_name: count} — checked against max_calls_per_run.
+    # tool_call_counts: {tool_id: count} — checked against max_calls_per_run.
     tool_call_counts: Dict[str, int]
     iteration_count: int         # incremented at entry of every node
     circuit_breaker_fired: bool
