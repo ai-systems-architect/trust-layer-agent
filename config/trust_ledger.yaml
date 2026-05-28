@@ -89,3 +89,56 @@ tools:
     max_calls_per_run: 0
     timeout_seconds: 0
     audit_retention_days: 365
+
+  - tool_id: "T-004"
+    tool_name: "search_cloudtrail_events"
+    description: "Search CloudTrail event records for compliance-relevant activity."
+    risk_tier: LOW
+    autonomy_class: AUTONOMOUS
+    human_review_required: false
+    evidence_lineage_required: true
+    required_evidence_fields:
+      - source_uri
+      - retrieval_timestamp
+      - evidence_hash
+    required_approver_role: null
+    allowed_actions:
+      - "cloudtrail:LookupEvents"
+      - "cloudtrail:GetTrailStatus"
+    prohibited_actions:
+      - "cloudtrail:DeleteTrail"
+      - "cloudtrail:StopLogging"
+    data_classifications_allowed:
+      - UNCLASSIFIED
+      - CUI
+    policy_enforcement_points:
+      pre_call: "validate_scope_bounds"
+      post_call: "sanitize_event_identifiers"
+    max_calls_per_run: 20
+    timeout_seconds: 10
+    audit_retention_days: 365
+
+  - tool_id: "T-005"
+    tool_name: "lookup_compliance_requirement"
+    description: "Retrieve compliance requirement text from P2 governed RAG system."
+    risk_tier: LOW
+    autonomy_class: AUTONOMOUS
+    human_review_required: false
+    evidence_lineage_required: true
+    required_evidence_fields:
+      - source_uri
+      - retrieval_timestamp
+      - evidence_hash
+    required_approver_role: null
+    allowed_actions:
+      - "retrieve_compliance_text"
+    prohibited_actions: []
+    data_classifications_allowed:
+      - UNCLASSIFIED
+      - CUI
+    policy_enforcement_points:
+      pre_call: "validate_scope_bounds"
+      post_call: "validate_evidence_lineage"
+    max_calls_per_run: 20
+    timeout_seconds: 15
+    audit_retention_days: 365
