@@ -24,6 +24,8 @@ Scope deliberately deferred from this project. Each item below is documented to 
 
 **Operational observability dashboards.** The Evaluation Suite captures input tokens, state transition latency, tool call frequency, and cache hit rates per run. Building a hosted dashboard surface over that data (Grafana over Langfuse, or similar) is a separate engineering exercise. The instrumentation is the load-bearing part; the dashboard is presentation.
 
+**ML-based sufficiency scoring.** The sufficiency assessment node currently uses LLM judgment to determine whether collected evidence supports a compliance determination. A lightweight trained classifier on evidence completeness features — evidence item count, required field coverage, source diversity, control-specific coverage thresholds — would replace probabilistic LLM assessment with a deterministic score. Lower latency, lower cost, auditable decision boundary. The [`responsible-mlops-risk-engine`](https://github.com/ai-systems-architect/responsible-mlops-risk-engine) portfolio project provides the natural substrate: the same drift monitoring and fairness audit infrastructure applies directly to a sufficiency classifier, and the governance pattern for model-in-the-loop decisions is already documented there.
+
 ---
 
 ### Considered and Deferred
