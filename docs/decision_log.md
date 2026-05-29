@@ -130,4 +130,6 @@ Operational finding: drafting calls at ~4,875 input tokens require ~63 seconds o
 
 **Note:** Token counts will increase with real evidence (production IAM policies and CloudTrail events are larger than synthetic fixtures). A 3–5× multiplier on input tokens is a reasonable production estimate, putting full-baseline cost at $20–35 per run.
 
+Prompt caching implemented for sufficiency and drafting system prompts. Cache hit rate and token reduction will be captured in Phase 3 evaluation baseline. First run confirmed cache_read_input_tokens and cache_creation_input_tokens are captured in token_usage and logged; cache metrics are 0 when the cross-region inference profile (`us.*`) is used — prompt caching on Bedrock requires the base model ID without the `us.` prefix.
+
 ---
