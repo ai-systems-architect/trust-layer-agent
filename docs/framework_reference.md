@@ -534,6 +534,23 @@ The trust ledger is a governance artifact, not a configuration file. It is subje
 
 ---
 
+### 4.8 HITL Escalation Trigger Conditions
+
+Human-in-the-loop escalation is enforced at the state machine and PEP layer — not through prompting. The following conditions trigger mandatory human review as explicit boolean predicates:
+
+| Trigger | Condition | Enforcement Point |
+|---|---|---|
+| Artifact submission | `submit_assessment_artifact` invoked | PEP-1 — HUMAN_GATED blocks without approval token |
+| Insufficient evidence | Sufficiency score False for any control at MAX_EVIDENCE_RETRIES | Circuit breaker → human review before re-run |
+| Conflicting evidence | Two or more sources contradict for same control | Flagged in sufficiency rationale — output marked for review |
+| Injection detection | PEP-2 injection pattern scan fires | Run continues with sanitized result — flagged for human review |
+| Circuit breaker event | Any circuit breaker fires during run | Human review required before re-run authorized |
+| DENIED tool attempt | Any tool with autonomy_class DENIED invoked | PEP-1 rejects, logs, alerts — human review of run intent |
+
+These triggers are not suggestions. Conditions 1 and 5 are hard gates enforced by the state machine. Conditions 2, 3, 4, and 6 are flagged in the governance decision record and surface in the Langfuse audit trail.
+
+---
+
 ## 6. Threat Model
 
 ### 6.1 Scope
