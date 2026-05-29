@@ -15,7 +15,7 @@ The integration pattern (real AWS IAM, short-lived STS session) is specified
 in docs/framework_reference.md Section 3 (Agent Identity).
 
 References:
-    DL-031: AC-2, AC-3, AC-6, AC-17 demonstration scope
+    DL-032: AC-2, AC-3, AC-6, AC-17 demonstration scope
     Framework Section 4.3: Policy Enforcement Points
     FUTURE_WORK.md: Real telemetry integration
 """

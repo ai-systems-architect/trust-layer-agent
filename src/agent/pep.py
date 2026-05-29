@@ -14,10 +14,10 @@ Two interfaces are provided:
 
 PEPs are called explicitly at node boundaries — not inside LangGraph's
 internal orchestration — so they are visible to the audit trail and cannot
-be bypassed by the orchestration framework (DL-030, Framework Section 11).
+be bypassed by the orchestration framework (DL-031, Framework Section 11).
 
 References:
-    DL-030: LangGraph PEP insertion rationale — inside execution path
+    DL-031: LangGraph PEP insertion rationale — inside execution path
     Framework Section 4.3: Policy Enforcement Points
     Framework Section 6.2: TM-001 (prompt injection via PEP-2 scan)
     Framework Section 6.2: TM-002 (confused deputy via PEP-1 scope check)

@@ -2,7 +2,7 @@
 Test run script — synthetic AC-family invocation.
 
 Initialises the graph with a clean per-run state and invokes it against
-the four AC-family controls selected in DL-031. Node implementations are
+the four AC-family controls selected in DL-032. Node implementations are
 stubs; this script exercises the graph structure and state machine routing.
 
 Usage (from repo root):
@@ -12,8 +12,8 @@ Usage (from repo root):
     PYTHONPATH=. python scripts/run_agent.py
 
 References:
-    DL-031: AC-2, AC-3, AC-6, AC-17 selected as demonstration scope
-    DL-035: Each invocation starts with clean ephemeral state
+    DL-032: AC-2, AC-3, AC-6, AC-17 selected as demonstration scope
+    DL-036: Each invocation starts with clean ephemeral state
     Framework Section 3: Agent Identity and Delegated Authority
 """
 

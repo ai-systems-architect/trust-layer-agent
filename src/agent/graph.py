@@ -17,9 +17,9 @@ Circuit breakers are checked exclusively in routing functions — not inside
 nodes — so they cannot be bypassed by node logic (Framework Section 11.2).
 
 References:
-    DL-030: LangGraph selected; PEPs inserted inside execution path
-    DL-031: AC-2, AC-3, AC-6, AC-17 demonstration scope
-    DL-035: Ephemeral per-run memory — graph state discarded on completion
+    DL-031: LangGraph selected; PEPs inserted inside execution path
+    DL-032: AC-2, AC-3, AC-6, AC-17 demonstration scope
+    DL-036: Ephemeral per-run memory — graph state discarded on completion
     Framework Section 4.3: Policy Enforcement Points
     Framework Section 5: Failure Mode Catalog (FM-003, FM-005)
     Framework Section 11: Deterministic vs. Probabilistic Orchestration

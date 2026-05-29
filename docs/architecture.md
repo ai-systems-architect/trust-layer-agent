@@ -142,7 +142,7 @@ trust-layer-agent/
 ├── docs/
 │   ├── architecture.md          This file
 │   ├── framework.md             Governance framework (Phase 1 deliverable)
-│   ├── decision_log.md          DL-030 onwards (continues from trust-layer-rag)
+│   ├── decision_log.md          DL-031 onwards (continues from trust-layer-rag)
 │   ├── agent_risk_classification_matrix.md
 │   └── examples/
 │       └── governance_decision.json

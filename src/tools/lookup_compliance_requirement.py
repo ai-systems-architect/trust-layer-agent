@@ -23,7 +23,7 @@ P2 API contract:
                             "framework": str, "control_id": str}]}
 
 References:
-    DL-031: AC-2, AC-3, AC-6, AC-17 demonstration scope
+    DL-032: AC-2, AC-3, AC-6, AC-17 demonstration scope
     Framework Section 4.3: Policy Enforcement Points
     Framework Section 5: Failure Mode Catalog — FM-002 (tool unavailability)
     FUTURE_WORK.md: Real telemetry integration

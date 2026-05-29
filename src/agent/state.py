@@ -1,12 +1,12 @@
 """
 Agent state schema — ephemeral per-run TypedDict.
 
-Every field is scoped to a single run. No state persists across runs (DL-035).
+Every field is scoped to a single run. No state persists across runs (DL-036).
 The state dict is the only memory the agent has during execution; it is
 initialized at run start and discarded on completion.
 
 References:
-    DL-035: Memory Architecture — ephemeral per-run, no cross-run persistence
+    DL-036: Memory Architecture — ephemeral per-run, no cross-run persistence
     Framework Section 3: Agent Identity and Delegated Authority
     Framework Section 3.6: Reasoning Trace Requirements
     Framework Section 4: Tool-Use Governance and Policy Enforcement Points
@@ -47,7 +47,7 @@ class AgentState(TypedDict):
     """
 
     # ── Run identity ──────────────────────────────────────────────────────
-    # Declared at invocation; fixed for the duration of the run (DL-035).
+    # Declared at invocation; fixed for the duration of the run (DL-036).
     run_id: str
     initiating_principal: str
     declared_control_family: str

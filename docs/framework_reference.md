@@ -362,7 +362,7 @@ The reasoning trace captures the agent's reasoning state. It does not capture:
 
 The agent uses ephemeral per-run memory with retrieval-augmented knowledge sourced from the governed RAG system (`trust-layer-rag`). No persistent memory is maintained across runs. The agent begins each run with a clean reasoning state scoped to the declared control family and account.
 
-**Recorded as DL-035 in `docs/decision_log.md`.**
+**Recorded as DL-036 in `docs/decision_log.md`.**
 
 #### Memory Architecture Options Evaluated
 

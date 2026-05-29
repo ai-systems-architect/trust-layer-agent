@@ -6,13 +6,13 @@ via DL-XXX pointers once the agent is implemented.
 
 Numbering continues across the portfolio. Predecessor project
 [trust-layer-rag](https://github.com/ai-systems-architect/trust-layer-rag)
-ended at **DL-029**. The first entry in this log is **DL-030**.
+ended at **DL-030**. The first entry in this log is **DL-031**.
 
 ---
 
 ---
 
-## DL-030 — Orchestration Framework: LangGraph
+## DL-031 — Orchestration Framework: LangGraph
 
 **Decision:** LangGraph selected as the agent orchestration framework.
 **Date:** 2026-05-26
@@ -28,7 +28,7 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 
 ---
 
-## DL-031 — AC Control Selection
+## DL-032 — AC Control Selection
 
 **Decision:** Demonstration scope locked to four controls: AC-2 (Account Management), AC-3 (Access Enforcement), AC-6 (Least Privilege), AC-17 (Remote Access).
 **Date:** 2026-05-11
@@ -43,7 +43,7 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 
 ---
 
-## DL-035 — Memory Architecture: Ephemeral Per-Run
+## DL-036 — Memory Architecture: Ephemeral Per-Run
 
 **Decision:** Agent uses ephemeral per-run memory. No persistent memory across runs. Authoritative knowledge sourced from P2 governed RAG on demand.
 **Date:** 2026-05-16
@@ -56,7 +56,7 @@ ended at **DL-029**. The first entry in this log is **DL-030**.
 
 ---
 
-## DL-032 — Synthetic Fixture Design
+## DL-033 — Synthetic Fixture Design
 
 **Decision:** IAM policy and CloudTrail event fixtures stored as JSON files in `fixtures/iam_policies/` and `fixtures/cloudtrail_events/`. Eight fixtures total — four per source type, one per control (AC-2, AC-3, AC-6, AC-17). Each fixture exhibits a known compliance finding.
 **Date:** 2026-05-28
@@ -75,14 +75,14 @@ Each fixture was designed to exhibit a specific finding:
 
 ---
 
-## DL-033 — LLM Provider and Model Selection
+## DL-034 — LLM Provider and Model Selection
 
 **Decision:** AWS Bedrock with `claude-sonnet-4-5-20251001` for both the agent (sufficiency assessment, draft generation) and the LLM-as-judge evaluation tier.
 **Date:** 2026-05-28
 
 **Rationale:** Bedrock is the natural choice for a federal portfolio project — it satisfies FedRAMP boundary requirements, keeps all inference within the AWS account perimeter, and is the model provider federal clients are most likely to be operating. Using the same provider for both the agent and the judge eliminates a cross-provider dependency while keeping the judge independent of the agent's specific call history. `claude-sonnet-4-5-20251001` provides strong instruction-following for structured JSON output (sufficiency assessment) and long-form generation (draft assessment).
 
-Operational finding: drafting calls at ~4,875 input tokens require ~63 seconds of inference time. Botocore's default 60-second `read_timeout` killed the first drafting run. Fixed by setting `read_timeout=300` via `botocore.config.Config`. This established the baseline cost-per-assessment metric: ~8,478 total tokens per full run (4 sufficiency calls + 1 drafting call). See DL-036 for the cost model.
+Operational finding: drafting calls at ~4,875 input tokens require ~63 seconds of inference time. Botocore's default 60-second `read_timeout` killed the first drafting run. Fixed by setting `read_timeout=300` via `botocore.config.Config`. This established the baseline cost-per-assessment metric: ~8,478 total tokens per full run (4 sufficiency calls + 1 drafting call). See DL-037 for the cost model.
 
 **Alternatives evaluated:**
 - Anthropic API directly — eliminates Bedrock dependency, simpler client. Eliminated: breaks FedRAMP boundary positioning and requires a separate API key outside AWS credentials.
@@ -91,7 +91,7 @@ Operational finding: drafting calls at ~4,875 input tokens require ~63 seconds o
 
 ---
 
-## DL-034 — Identity Scope: Mocked
+## DL-035 — Identity Scope: Mocked
 
 **Decision:** Agent identity and delegated authority implemented as mocked — execution identity declared in trust ledger schema, role-assumption flow simulated, not wired to real AWS STS.
 **Date:** 2026-05-28
@@ -104,7 +104,7 @@ Operational finding: drafting calls at ~4,875 input tokens require ~63 seconds o
 
 ---
 
-## DL-036 — Cost Per Control Assessment Baseline
+## DL-037 — Cost Per Control Assessment Baseline
 
 **Decision:** Token economics documented as a first-class operational metric. Baseline established from first successful end-to-end run.
 **Date:** 2026-05-28

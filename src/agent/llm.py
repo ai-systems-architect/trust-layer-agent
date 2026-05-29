@@ -20,9 +20,9 @@ the anthropic-beta header injection via botocore event. The non-caching path
 uses ChatBedrock with SystemMessage as before.
 
 References:
-    DL-030: LangGraph selected; Bedrock as inference provider
-    DL-033: Bedrock model selection; read_timeout fix for drafting calls
-    DL-036: Token cost baseline; prompt caching reduces per-control cost
+    DL-031: LangGraph selected; Bedrock as inference provider
+    DL-034: Bedrock model selection; read_timeout fix for drafting calls
+    DL-037: Token cost baseline; prompt caching reduces per-control cost
     Framework Section 11.3: Probabilistic reasoning within deterministic bounds
 """
 
