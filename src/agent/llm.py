@@ -89,7 +89,7 @@ def get_llm() -> ChatBedrock:
     Initialise and return a Bedrock LLM client.
 
     temperature=0 enforces deterministic, structured output for governance
-    assessments. max_tokens=4096 accommodates full evidence summaries.
+    assessments. max_tokens=8192 accommodates full evidence summaries.
 
     read_timeout=300 allows up to 5 minutes for large drafting responses
     (evidence summary + 4-control assessment can generate 2000+ output tokens).
@@ -104,7 +104,7 @@ def get_llm() -> ChatBedrock:
         region_name=AWS_REGION,
         model_kwargs={
             "temperature": 0,
-            "max_tokens": 4096,
+            "max_tokens": 8192,
         },
         config=_BEDROCK_CONFIG,
     )
@@ -195,7 +195,7 @@ def _invoke_cached(
 
     body = {
         "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 4096,
+        "max_tokens": 8192,
         "temperature": 0,
         "system": [
             {
