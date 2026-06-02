@@ -170,6 +170,14 @@ def main() -> None:
     logger.info("  errors:                %s", final_state.get("errors"))
     logger.info("─" * 60)
 
+    # Flush Langfuse traces before process exits
+    try:
+        from src.agent.graph import langfuse  # noqa: PLC0415
+        langfuse.flush()
+        logger.info("Langfuse traces flushed")
+    except Exception as e:  # noqa: BLE001
+        logger.warning("Langfuse flush failed: %s", e)
+
 
 if __name__ == "__main__":
     main()
