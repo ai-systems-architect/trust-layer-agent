@@ -13,7 +13,7 @@
 2. Trust Boundary Taxonomy
 3. Agent Identity and Delegated Authority
 4. Tool-Use Governance and Policy Enforcement Points
-5. Failure Mode Catalog
+5. Hazard Register and Failure Mode Catalog
 6. Threat Model
 7. Agent Risk Classification Matrix
 8. Evaluation Methodology
@@ -548,6 +548,16 @@ Human-in-the-loop escalation is enforced at the state machine and PEP layer — 
 | DENIED tool attempt | Any tool with autonomy_class DENIED invoked | PEP-1 rejects, logs, alerts — human review of run intent |
 
 These triggers are not suggestions. Conditions 1 and 5 are hard gates enforced by the state machine. Conditions 2, 3, 4, and 6 are flagged in the governance decision record and surface in the Langfuse audit trail.
+
+---
+
+## 5. Hazard Register and Failure Mode Catalog
+
+### 5.1 Scope
+
+This catalog functions as the system's hazard register — concrete, domain-specific failure modes with named detection signals and binding response requirements, not generic risk categories. It documents the failure modes an agentic AI system may exhibit during execution, distinguishes between operational failures and adversarial failures (covered in the threat model in Section 6), and specifies for each: the observable symptom, the root cause, the governance control that catches or prevents it, and the recovery path.
+
+This catalog drives the evaluation suite in Section 8. Every failure mode listed here has a corresponding scenario in the evaluation set.
 
 ---
 
