@@ -38,6 +38,15 @@ from botocore.config import Config
 from langchain_aws import ChatBedrock
 from langchain_core.messages import HumanMessage, SystemMessage
 
+try:
+    from langfuse import observe as _lf_observe, get_client as _lf_get_client
+except Exception:  # noqa: BLE001
+    def _lf_observe(*_a: Any, **_kw: Any) -> Any:  # type: ignore[misc]
+        return _a[0] if _a and callable(_a[0]) else (lambda f: f)
+
+    def _lf_get_client() -> Any:  # type: ignore[misc]
+        return None
+
 logger = logging.getLogger(__name__)
 
 BEDROCK_MODEL_ID = os.getenv(
@@ -173,6 +182,7 @@ def invoke_with_logging(
     return response.content, token_usage
 
 
+@_lf_observe(name="bedrock_invoke", as_type="generation", capture_input=False, capture_output=False)
 def _invoke_cached(
     system_prompt: str,
     user_prompt: str,
@@ -241,5 +251,26 @@ def _invoke_cached(
         cache_read,
         cache_write,
     )
+
+    # Record generation metadata in the Langfuse span.
+    try:
+        _lf_get_client().update_current_generation(
+            name=node_name,
+            model=BEDROCK_MODEL_ID,
+            input=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            output=text,
+            usage_details={
+                "input": input_tokens,
+                "output": output_tokens,
+                "cache_read_input_tokens": cache_read,
+                "cache_creation_input_tokens": cache_write,
+            },
+            metadata={"run_id": run_id},
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
     return text, token_usage
