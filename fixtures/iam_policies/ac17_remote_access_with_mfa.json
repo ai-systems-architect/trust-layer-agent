@@ -1,0 +1,30 @@
+{
+  "RoleName": "RemoteAccessRoleCompliant",
+  "RoleId": "AROAVVVVVVVVVVVVVVVVV",
+  "Arn": "arn:aws:iam::123456789:role/RemoteAccessRoleCompliant",
+  "AttachedPolicies": [
+    {
+      "PolicyName": "RemoteAccessPolicyCompliant",
+      "PolicyArn": "arn:aws:iam::123456789:policy/RemoteAccessPolicyCompliant"
+    }
+  ],
+  "PolicyDocument": {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": ["ec2:DescribeInstances", "ssm:StartSession"],
+        "Resource": "*",
+        "Condition": {
+          "Bool": {
+            "aws:MultiFactorAuthPresent": "true"
+          }
+        }
+      }
+    ]
+  },
+  "MFAEnabled": true,
+  "finding": "compliant",
+  "control_id": "AC-17",
+  "description": "Remote access role requires MFA condition on all SSM session starts. Compliant with AC-17 remote access controls."
+}

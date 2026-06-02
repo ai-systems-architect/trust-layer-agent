@@ -1,0 +1,28 @@
+{
+  "Records": [
+    {
+      "eventTime": "2025-03-15T10:00:00Z",
+      "eventName": "StartSession",
+      "userIdentity": {
+        "type": "IAMRole",
+        "sessionContext": {
+          "sessionIssuer": {
+            "type": "Role",
+            "arn": "arn:aws:iam::123456789:role/RemoteAccessRoleCompliant",
+            "userName": "RemoteAccessRoleCompliant"
+          }
+        },
+        "mfaAuthenticated": true
+      },
+      "requestParameters": {
+        "target": "i-0abc123def456789"
+      },
+      "responseElements": {
+        "sessionId": "session-compliant-0xyz"
+      },
+      "finding": "compliant",
+      "control_id": "AC-17",
+      "description": "SSM session initiated with MFA authentication. AC-17 remote access controls satisfied."
+    }
+  ]
+}

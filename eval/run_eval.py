@@ -11,13 +11,20 @@ Usage:
   python eval/run_eval.py                    # run all scenarios
   python eval/run_eval.py --tier happy_path  # run one tier
   python eval/run_eval.py --scenario hp_001  # run one scenario
+
+NOTE: HP-007 (P2 unavailable) must be run separately with P2 stopped.
 """
 
 from __future__ import annotations
 
 import argparse
 import logging
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
+
+# Add project root to path before any local imports.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,12 +35,69 @@ logger = logging.getLogger(__name__)
 SCENARIO_TIERS = ["happy_path", "failure_modes", "adversarial"]
 
 
-def run_all() -> None:
-    """Run all evaluation scenarios and produce eval report."""
+def run_happy_path() -> list[dict]:
+    """Run all happy path scenarios (except HP-007 which requires P2 down)."""
+    from eval.scenarios.happy_path import (  # noqa: PLC0415
+        hp_001_ac2_complete,
+        hp_002_ac3_finding,
+        hp_003_ac6_violation,
+        hp_004_ac17_compliant,
+        hp_005_multi_control,
+        hp_006_rerun_after_rejection,
+        hp_008_approved_submission,
+    )
+
+    scenarios = [
+        hp_001_ac2_complete,
+        hp_002_ac3_finding,
+        hp_003_ac6_violation,
+        hp_004_ac17_compliant,
+        hp_005_multi_control,
+        hp_006_rerun_after_rejection,
+        hp_008_approved_submission,
+    ]
+
+    logger.info(
+        "NOTE: HP-007 (P2 down) must be run separately with P2 not running."
+    )
+
+    results = []
+    for scenario in scenarios:
+        try:
+            result = scenario.run()
+            results.append(result)
+            status = "PASS" if result["passed"] else "FAIL"
+            logger.info(
+                "%-10s %-8s %s",
+                result["scenario_id"],
+                status,
+                result["grader_pass_rate"],
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                "Scenario %s crashed: %s",
+                getattr(scenario, "__name__", "UNKNOWN"),
+                exc,
+            )
+            results.append({
+                "scenario_id": getattr(scenario, "SCENARIO_ID", "UNKNOWN"),
+                "passed": False,
+                "error": str(exc),
+            })
+
+    passed = sum(1 for r in results if r.get("passed"))
+    logger.info("Happy path complete: %d/%d passed", passed, len(results))
+    return results
+
+
+def run_all() -> list[dict]:
+    """Run all evaluation scenarios."""
     logger.info("Phase 3 Evaluation Suite — starting full run")
-    logger.info("Tiers: happy_path (8) | failure_modes (7) | adversarial (4)")
-    # TODO Phase 3 — implement scenario execution
-    logger.info("Scaffold only — scenarios not yet implemented")
+    results = run_happy_path()
+    logger.info(
+        "Failure mode and adversarial scenarios — not yet implemented"
+    )
+    return results
 
 
 def main() -> None:
@@ -58,8 +122,11 @@ def main() -> None:
 
     if args.scenario:
         logger.info("Single scenario mode: %s", args.scenario)
+        # TODO Phase 3 — route to individual scenario by prefix
     elif args.tier:
         logger.info("Single tier mode: %s", args.tier)
+        if args.tier == "happy_path":
+            run_happy_path()
     else:
         run_all()
 
