@@ -172,9 +172,10 @@ def main() -> None:
 
     # Flush Langfuse traces before process exits
     try:
-        from src.agent.graph import langfuse  # noqa: PLC0415
-        langfuse.flush()
-        logger.info("Langfuse traces flushed")
+        from src.agent.graph import _langfuse_client  # noqa: PLC0415
+        if _langfuse_client is not None:
+            _langfuse_client.flush()
+            logger.info("Langfuse traces flushed")
     except Exception as e:  # noqa: BLE001
         logger.warning("Langfuse flush failed: %s", e)
 
