@@ -133,3 +133,18 @@ Operational finding: drafting calls at ~4,875 input tokens require ~63 seconds o
 Prompt caching implemented for sufficiency and drafting system prompts (see `src/agent/llm.py` — `_invoke_cached`, `_get_caching_client`). Cache hit rate and token reduction will be captured in Phase 3 evaluation baseline when caching activates. Confirmed finding: this account has access only to the cross-region inference profile (`us.anthropic.claude-sonnet-4-5-20250929-v1:0`); the base model ID (`anthropic.claude-sonnet-4-5-20251001-v1:0`) returns `ValidationException: The provided model identifier is invalid`. Bedrock prompt caching via the `anthropic-beta` header requires the base model ID — it is not available via cross-region inference profiles. The caching infrastructure is complete and correct; cache metrics will populate automatically if the account is granted access to a base model ID. Phase 3 token baseline uses the uncached cross-region profile numbers from the table above.
 
 ---
+
+## DL-038 — FM-002 Behavior After Sufficiency Prompt Fix
+
+**Decision:** HP-007 grader updated to accept two valid FM-002 outcomes: `circuit_breaker_fired=True` OR `current_node=awaiting_human_review`.
+**Date:** 2026-06-02
+
+**Rationale:** The sufficiency prompt fix (disambiguating NON-COMPLIANT as a sufficient determination) changed FM-002 behavior. Before the fix: the LLM required compliance requirement text from P2 to judge evidence sufficient — circuit breaker always fired when P2 was down because IAM + CloudTrail evidence alone was judged insufficient. After the fix: the LLM correctly judges IAM + CloudTrail evidence sufficient for a NON-COMPLIANT determination even without compliance requirement text from P2. The agent completes the run and reaches `awaiting_human_review` instead of cycling to the circuit breaker. Both behaviors are valid FM-002 graceful degradation — the key invariant is safe completion with no unhandled exceptions, not which exit path is taken.
+
+**Alternatives evaluated:**
+- Revert sufficiency prompt fix to force circuit breaker — rejected. The fix is architecturally correct; a NON-COMPLIANT finding from fixture evidence alone is a valid compliance determination.
+- Require P2 for sufficiency — rejected. FM-002 explicitly specifies graceful degradation as the correct behavior; P2 unreachable must not be fatal.
+
+---
+
+---
