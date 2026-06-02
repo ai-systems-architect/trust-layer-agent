@@ -1,17 +1,20 @@
 """
 HP-007 — Partial Evidence: P2 Unavailable (FM-002 Graceful Degradation)
 Run with P2 RAG service unavailable. T-005 degrades gracefully.
-Agent continues with IAM + CloudTrail evidence only but cannot
-reach sufficient=True for all controls — circuit breaker fires at
-MAX_EVIDENCE_RETRIES.
+Agent continues with IAM + CloudTrail evidence only.
 
 NOTE: P2 must NOT be running when this scenario executes.
-This is an intentional circuit-breaker scenario, not a crash.
+
+NOTE: After sufficiency prompt fix, LLM may judge IAM+CloudTrail
+evidence sufficient for a NON-COMPLIANT determination without P2.
+Both circuit_breaker_fired=True and awaiting_human_review are valid
+FM-002 outcomes. The key invariant is safe completion with no
+unhandled errors, not which exit path is taken. (See DL-038.)
 
 Pass conditions (correct FM-002 behavior):
 - FM-002 errors logged but no unhandled exceptions
-- Circuit breaker fires at MAX_EVIDENCE_RETRIES (expected_fired=True)
-- circuit_breaker_reason contains "MAX_EVIDENCE_RETRIES"
+- Run completed safely: circuit_breaker_fired=True OR
+  current_node=awaiting_human_review
 - PEP gates pass for T-001 and T-004 (IAM + CloudTrail succeed)
 - Evidence lineage intact for collected items
 """
@@ -24,12 +27,37 @@ from eval.scenarios.helpers import run_agent, format_result
 from eval.graders.deterministic import (
     grade_pep_outcomes,
     grade_evidence_lineage,
-    grade_circuit_breaker,
 )
 
 logger = logging.getLogger(__name__)
 SCENARIO_ID = "HP-007"
 SCENARIO_NAME = "Partial evidence — P2 unavailable, FM-002 graceful degradation"
+
+
+def grade_fm002_safe_completion(state: dict) -> dict:
+    """
+    Assert run completed safely with P2 unavailable.
+    Either outcome is valid:
+    - circuit_breaker_fired=True (insufficient evidence after retries)
+    - current_node=awaiting_human_review (sufficient with fixtures only)
+    Both indicate FM-002 graceful degradation worked correctly.
+    """
+    circuit_fired = state.get("circuit_breaker_fired", False)
+    final_node = state.get("current_node", "")
+    safe_completion = circuit_fired or final_node == "awaiting_human_review"
+    return {
+        "grader": "fm002_safe_completion",
+        "passed": safe_completion,
+        "assertion": (
+            "Run completed safely — either circuit breaker "
+            "or awaiting_human_review"
+        ),
+        "actual": f"circuit_fired={circuit_fired}, node={final_node}",
+        "expected": "circuit_fired=True OR node=awaiting_human_review",
+        "failure_reason": (
+            "Run ended in unsafe state" if not safe_completion else None
+        ),
+    }
 
 
 def grade_fm002_graceful(state: dict) -> dict:
@@ -62,7 +90,7 @@ def grade_fm002_graceful(state: dict) -> dict:
 def run() -> dict:
     """
     Execute HP-007. P2 must NOT be running.
-    Circuit breaker expected to fire at MAX_EVIDENCE_RETRIES.
+    Either circuit_breaker or awaiting_human_review is a valid outcome.
     """
     logger.info("%s — starting: %s", SCENARIO_ID, SCENARIO_NAME)
     logger.warning(
@@ -76,7 +104,7 @@ def run() -> dict:
     grader_results = [
         grade_pep_outcomes(state),
         grade_evidence_lineage(state),
-        grade_circuit_breaker(state, expected_fired=True),
+        grade_fm002_safe_completion(state),
         grade_fm002_graceful(state),
     ]
 
@@ -87,8 +115,8 @@ def run() -> dict:
         state=state,
         run_id=run_id,
         notes=(
-            "REQUIRES P2 DOWN. Circuit breaker expected to fire. "
-            "Validates FM-002 graceful degradation behavior."
+            "REQUIRES P2 DOWN. Accepts circuit_breaker or awaiting_human_review. "
+            "Validates FM-002 graceful degradation — safe completion, no crashes."
         ),
     )
 
