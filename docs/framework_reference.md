@@ -436,6 +436,21 @@ Every tool the agent may invoke must be registered in `config/trust_ledger.yaml`
 | `timeout_seconds` | Maximum execution time before the call is terminated |
 | `audit_retention_days` | Minimum retention period for all records associated with this tool |
 
+#### Authority Boundary Rule
+
+Authority-modifying actions require a human checkpoint. The agent may read identity and access state but must not hold unsupervised write access to the authority structure itself: credentials, recovery email or phone, MFA settings, permission grants, or account creation.
+
+Any action that changes who can authenticate, or what they are permitted to do, routes to HUMAN_GATED regardless of the agent's confidence or the requester's framing.
+
+**Rationale:** An agent with write access to authority-granting state can be induced to escalate privilege on behalf of an attacker — the confused-deputy pattern at the identity layer. An attacker does not need to breach the system if they can manipulate an agent into modifying who has access to it.
+
+**Reference case:** Meta AI support incident, May 2026. Agent write access to account recovery enabled account takeover without any system breach. The agent was operating within its declared function; the governance gap was the absence of an explicit deny rule on authority-modifying actions.
+
+**Implementation in this framework:**
+- `iam:CreateUser`, `iam:CreateRole`, `iam:AttachRolePolicy`, `iam:PutUserPolicy` — all in `prohibited_actions` on registered read tools
+- `modify_iam_policy` (T-003) — `autonomy_class: DENIED`, rejected at pre-call gate regardless of context
+- No tool registered with write access to authentication state, MFA configuration, or account recovery paths
+
 ---
 
 ### 4.3 Policy Enforcement Points

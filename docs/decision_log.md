@@ -134,6 +134,26 @@ Prompt caching implemented for sufficiency and drafting system prompts (see `src
 
 ---
 
+## DL-039 — Authority Boundary Rule: Explicit Deny on Identity Write Access
+
+**Decision:** Added explicit authority boundary rule to Section 4.2 of `framework_reference.md`. No tool registered in the trust ledger may hold write access to authentication state, MFA configuration, account recovery paths, permission grants, or account creation — regardless of autonomy class or requester framing. Such actions are DENIED at the pre-call gate.
+**Date:** 2026-06-02
+
+**Rationale:** The confused-deputy pattern at the identity layer does not require a system breach. An attacker who can manipulate an agent into modifying who has access to a system achieves the same outcome as a direct breach. The rule closes this path explicitly rather than relying on least-privilege role assignment alone.
+
+**Reference case:** Meta AI support incident, May 2026. An AI support agent with write access to account recovery settings was manipulated into enabling account takeover. No system was breached. The agent operated within its declared function. The governance gap was the absence of an explicit rule prohibiting authority-modifying writes.
+
+**Existing controls this formalizes:**
+- T-003 (`modify_iam_policy`) already `autonomy_class: DENIED`
+- All registered read tools have `iam:Create*` and `iam:Attach*` in `prohibited_actions`
+- This DL formalizes the principle behind those controls so future tool additions are evaluated against an explicit rule, not just a precedent
+
+**Alternatives evaluated:**
+- Rely on least-privilege IAM role alone — insufficient. Role-level controls are platform-layer; the trust ledger must enforce the same boundary at the application layer independently.
+- Case-by-case review of new tool registrations — rejected. An explicit rule is auditable; case-by-case judgment is not.
+
+---
+
 ## DL-038 — FM-002 Behavior After Sufficiency Prompt Fix
 
 **Decision:** HP-007 grader updated to accept two valid FM-002 outcomes: `circuit_breaker_fired=True` OR `current_node=awaiting_human_review`.
