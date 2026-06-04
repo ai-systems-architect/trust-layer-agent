@@ -125,3 +125,71 @@ def format_result(
         "error_count": len(state.get("errors", [])),
         "notes": notes,
     }
+
+
+def make_base_state(
+    run_id: str = None,  # type: ignore[assignment]
+    controls: list = None,  # type: ignore[assignment]
+) -> dict:
+    """
+    Build a minimal valid agent state for injection testing.
+    Used by failure mode scenarios to construct controlled states.
+    Includes all AgentState fields so graders never hit KeyError.
+    """
+    run_id = run_id or str(uuid.uuid4())
+    controls = controls or ["AC-2", "AC-3", "AC-6", "AC-17"]
+
+    base_evidence: dict = {}
+    for control_id in controls:
+        base_evidence[control_id] = [
+            {
+                "control_id": control_id,
+                "source_uri": (
+                    f"fixtures://iam_policies/"
+                    f"{control_id.lower().replace('-', '')}_test.json"
+                ),
+                "retrieval_timestamp": datetime.now(timezone.utc).isoformat(),
+                "evidence_hash": (
+                    f"abc123def456{control_id.replace('-', '').lower()}"
+                ),
+                "text": f"Test evidence for {control_id}",
+                "relevance_score": 1.0,
+                "framework": "NIST-800-53",
+                "tool_id": "T-001",
+            }
+        ]
+
+    return {
+        "run_id": run_id,
+        "initiating_principal": "eval-injector",
+        "declared_control_family": "AC",
+        "declared_account_id": "123456789",
+        "controls_to_assess": controls,
+        "run_start_time": datetime.now(timezone.utc).isoformat(),
+        "evidence": base_evidence,
+        "sufficiency_results": {
+            c: {
+                "control_id": c,
+                "sufficient": True,
+                "evidence_count": 1,
+                "missing_fields": [],
+                "rationale": "Test state — injected",
+            }
+            for c in controls
+        },
+        "evidence_retry_count": 0,
+        "draft_assessment": None,
+        "draft_timestamp": None,
+        "approval_required": False,
+        "approval_token": None,
+        "approval_status": None,
+        "approver_role": None,
+        "approval_timestamp": None,
+        "pep_outcomes": [],
+        "tool_call_counts": {"T-001": 1, "T-004": 1, "T-005": 4},
+        "iteration_count": 2,
+        "circuit_breaker_fired": False,
+        "circuit_breaker_reason": None,
+        "errors": [],
+        "current_node": "awaiting_human_review",
+    }

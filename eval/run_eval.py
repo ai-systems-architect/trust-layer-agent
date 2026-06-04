@@ -90,14 +90,70 @@ def run_happy_path() -> list[dict]:
     return results
 
 
+def run_failure_modes() -> list[dict]:
+    """Run all 7 failure mode scenarios."""
+    from eval.scenarios.failure_modes import (  # noqa: PLC0415
+        fm_001_hallucinated_assertion,
+        fm_002_incomplete_evidence,
+        fm_003_reasoning_loop,
+        fm_004_tool_timeout,
+        fm_005_sufficiency_gate_bypass,
+        fm_006_excessive_tokens,
+        fm_007_stale_evidence,
+    )
+
+    scenarios = [
+        fm_001_hallucinated_assertion,
+        fm_002_incomplete_evidence,
+        fm_003_reasoning_loop,
+        fm_004_tool_timeout,
+        fm_005_sufficiency_gate_bypass,
+        fm_006_excessive_tokens,
+        fm_007_stale_evidence,
+    ]
+
+    results = []
+    for scenario in scenarios:
+        try:
+            result = scenario.run()
+            results.append(result)
+            status = "PASS" if result["passed"] else "FAIL"
+            logger.info(
+                "%-10s %-8s %s",
+                result["scenario_id"],
+                status,
+                result["grader_pass_rate"],
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                "Scenario %s crashed: %s",
+                getattr(scenario, "__name__", "UNKNOWN"),
+                exc,
+            )
+            results.append({
+                "scenario_id": getattr(scenario, "SCENARIO_ID", "UNKNOWN"),
+                "passed": False,
+                "error": str(exc),
+            })
+
+    passed = sum(1 for r in results if r.get("passed"))
+    logger.info("Failure modes complete: %d/%d passed", passed, len(results))
+    return results
+
+
 def run_all() -> list[dict]:
     """Run all evaluation scenarios."""
     logger.info("Phase 3 Evaluation Suite — starting full run")
-    results = run_happy_path()
+    hp_results = run_happy_path()
+    fm_results = run_failure_modes()
+    all_results = hp_results + fm_results
+    passed = sum(1 for r in all_results if r.get("passed"))
     logger.info(
-        "Failure mode and adversarial scenarios — not yet implemented"
+        "Full eval complete: %d/%d scenarios passed",
+        passed, len(all_results),
     )
-    return results
+    logger.info("Adversarial scenarios — not yet implemented")
+    return all_results
 
 
 def main() -> None:
@@ -127,6 +183,8 @@ def main() -> None:
         logger.info("Single tier mode: %s", args.tier)
         if args.tier == "happy_path":
             run_happy_path()
+        elif args.tier == "failure_modes":
+            run_failure_modes()
     else:
         run_all()
 
