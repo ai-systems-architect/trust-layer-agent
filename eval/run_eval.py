@@ -141,18 +141,63 @@ def run_failure_modes() -> list[dict]:
     return results
 
 
+def run_adversarial() -> list[dict]:
+    """Run all 4 adversarial scenarios."""
+    from eval.scenarios.adversarial import (  # noqa: PLC0415
+        tm_001_prompt_injection,
+        tm_002_confused_deputy,
+        tm_003_fabricated_approval_token,
+        tm_004_verifier_robustness,
+    )
+
+    scenarios = [
+        tm_001_prompt_injection,
+        tm_002_confused_deputy,
+        tm_003_fabricated_approval_token,
+        tm_004_verifier_robustness,
+    ]
+
+    results = []
+    for scenario in scenarios:
+        try:
+            result = scenario.run()
+            results.append(result)
+            status = "PASS" if result.get("passed") else "FAIL"
+            logger.info(
+                "%-10s %-8s %s",
+                result.get("scenario_id", "?"),
+                status,
+                result.get("grader_pass_rate", "?"),
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                "Scenario %s crashed: %s",
+                getattr(scenario, "__name__", "UNKNOWN"),
+                exc,
+            )
+            results.append({
+                "scenario_id": getattr(scenario, "SCENARIO_ID", "UNKNOWN"),
+                "passed": False,
+                "error": str(exc),
+            })
+
+    passed = sum(1 for r in results if r.get("passed"))
+    logger.info("Adversarial complete: %d/%d passed", passed, len(results))
+    return results
+
+
 def run_all() -> list[dict]:
     """Run all evaluation scenarios."""
     logger.info("Phase 3 Evaluation Suite — starting full run")
     hp_results = run_happy_path()
     fm_results = run_failure_modes()
-    all_results = hp_results + fm_results
+    adv_results = run_adversarial()
+    all_results = hp_results + fm_results + adv_results
     passed = sum(1 for r in all_results if r.get("passed"))
     logger.info(
         "Full eval complete: %d/%d scenarios passed",
         passed, len(all_results),
     )
-    logger.info("Adversarial scenarios — not yet implemented")
     return all_results
 
 
@@ -185,6 +230,8 @@ def main() -> None:
             run_happy_path()
         elif args.tier == "failure_modes":
             run_failure_modes()
+        elif args.tier == "adversarial":
+            run_adversarial()
     else:
         run_all()
 
