@@ -167,4 +167,21 @@ Prompt caching implemented for sufficiency and drafting system prompts (see `src
 
 ---
 
+## DL-040 — Model Routing: Frontier for High-Consequence Steps
+
+**Decision:** All LLM calls in this implementation route to the frontier model. Model routing per step is documented as a governed architectural decision — classify by consequence, assign model tier accordingly.
+**Date:** 2026-06-02
+
+**Rationale:** Model selection per step carries cost, latency, and risk dimensions. Routing compliance synthesis or sufficiency assessment to a cheaper model to reduce cost is a risk decision that must be made explicitly, not by default. The governance framework documents the classification principle so future implementations apply it deliberately.
+
+Low-consequence steps (metadata extraction, intent classification, formatting) are candidates for fast/lightweight models. High-consequence steps (compliance synthesis, sufficiency assessment, draft generation, escalation decisions) require frontier model quality — these outputs inform real compliance determinations and carry audit trail requirements.
+
+**Current implementation choice:** Frontier model for all steps. Correct for a reference implementation where pattern clarity takes precedence over cost optimization. Production deployments should apply the step-consequence classification.
+
+**Cost implication:** The DL-037 baseline ($0.024/control) reflects all-frontier routing. A production deployment routing low-consequence steps to a lightweight model could reduce per-control cost by 40–60% while maintaining governance posture on high-consequence steps.
+
+**Alternatives evaluated:**
+- Route all steps to lightweight model — rejected. Compliance synthesis and sufficiency assessment quality degrades measurably on smaller models. Risk is not worth the cost saving on the high-consequence path.
+- No explicit routing policy — rejected. Implicit defaults are ungoverned decisions. The classification must be explicit and auditable.
+
 ---

@@ -1205,3 +1205,24 @@ The deterministic vs. probabilistic distinction is enforced through the trust le
 | LangGraph conditional edges | Routing within bounded reasoning states is LLM-driven |
 
 Prompting the agent to "always request human approval before submitting" is insufficient. The approval gate is enforced at the state machine and PEP layer — the LLM's instruction-following behavior is not the control.
+
+---
+
+### 11.6 Model Routing as a Governance Decision
+
+Model selection per agent step is a governed architectural decision with cost, latency, and risk dimensions — not a default.
+
+The governing principle: classify by consequence, then assign model tier accordingly.
+
+| Step Type | Examples | Model Tier | Rationale |
+|---|---|---|---|
+| Low-consequence | Metadata extraction, intent classification, query formatting, result summarization | Fast/lightweight | No audit trail required, errors are recoverable, low blast radius |
+| High-consequence | Compliance synthesis, sufficiency assessment, draft generation, escalation decisions | Frontier | Output informs real decisions, errors propagate to draft artifact, audit trail required |
+
+**Current implementation:** All LLM calls in this reference implementation route to the frontier model (`claude-sonnet-4-5` via Bedrock). This is intentional for a governance reference implementation — demonstrating the pattern cleanly takes precedence over cost optimization. Production deployments should apply the classification above.
+
+**Why this belongs in the governance framework and not just the implementation:** A team that routes compliance synthesis to a cheap model to cut costs has made a risk decision — whether or not they named it one. Making the classification explicit converts an implicit cost trade-off into an auditable architectural decision.
+
+**Connection to cost governance:** The $0.024/control baseline (DL-037) was established on frontier model calls. A production deployment routing low-consequence steps to a lightweight model could reduce this by 40–60% without changing the governance posture on high-consequence steps. The baseline is the reference point for that calculation.
+
+**Future work:** Multi-tier model routing is documented in `FUTURE_WORK.md` under Stretch. Implementation requires a routing classifier, per-step consequence classification in the trust ledger, and separate cost baselines per model tier.
