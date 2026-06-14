@@ -42,6 +42,132 @@ FUTURE_WORK.md                                 Documented extensions, not built
 
 ---
 
+## What's Built
+
+### Agent State Machine
+
+```
+┌─────────────┐
+│   planning  │  Validates scope, initializes evidence buckets
+└──────┬──────┘
+       │ direct edge
+┌──────▼──────────┐
+│   evidence_     │  T-001 IAM + T-004 CloudTrail + T-005 P2 RAG
+│   gathering     │  PEP-1 (pre-call) → execute → PEP-2 (post-call)
+└──────┬──────────┘
+       │ conditional edge
+┌──────▼──────────┐  insufficient  ┌──────────────────┐
+│   sufficiency_  │ ──────────────►│   evidence_      │
+│   assessment    │                │   gathering(retry)│
+└──────┬──────────┘                └──────────────────┘
+       │ sufficient (all controls)
+       │  MAX_RETRIES → circuit_breaker
+┌──────▼──────┐
+│   drafting  │  Bedrock LLM → markdown assessment + citations
+└──────┬──────┘
+       │ direct edge
+┌──────▼──────────────┐
+│   awaiting_human_   │  HUMAN_GATED — run suspended
+│   review            │  governance_decision.json written
+└──────┬──────────────┘
+       │ APPROVED              │ REJECTED
+┌──────▼──────┐         ┌──────▼──────┐
+│     END     │         │   drafting  │
+└─────────────┘         └─────────────┘
+```
+
+### System Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     Streamlit UI  (:8501)                       │
+│        Run config → Live status → Draft review → Approve/Reject │
+└────────────────────────┬────────────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────────────┐
+│                      trust-layer-agent                          │
+│                                                                 │
+│  ┌─────────────┐   ┌──────────────┐   ┌──────────────────┐    │
+│  │   trust_    │   │   LangGraph  │   │  Langfuse Cloud  │    │
+│  │ ledger.yaml │──►│    State     │──►│  Traces + Tokens │    │
+│  │  5 tools    │   │   Machine    │   │  Per-node spans  │    │
+│  │  PEP rules  │   │   5 nodes    │   └──────────────────┘    │
+│  └─────────────┘   └──────┬───────┘                           │
+│                            │                                    │
+│             ┌──────────────┼──────────────────┐               │
+│             ▼              ▼                  ▼               │
+│    ┌────────────┐  ┌─────────────┐  ┌──────────────────┐     │
+│    │   T-001    │  │    T-004    │  │      T-005       │     │
+│    │ IAM Policy │  │ CloudTrail  │  │  Compliance RAG  │     │
+│    │  Fixtures  │  │  Fixtures   │  │  POST /retrieve  │     │
+│    │  LOW/AUTO  │  │  LOW/AUTO   │  │    LOW/AUTO      │     │
+│    └────────────┘  └─────────────┘  └────────┬─────────┘     │
+└───────────────────────────────────────────────┼───────────────┘
+                                                │ HTTP
+┌───────────────────────────────────────────────▼───────────────┐
+│                     trust-layer-rag  (:8000)                  │
+│   Presidio PII scrub → pgvector HNSW + BM25 → Cohere rerank  │
+│   Bedrock Guardrails → Evidence chunks with lineage metadata  │
+└───────────────────────────────────────────────────────────────┘
+
+Output artifacts (outputs/):
+  governance_decision_{run_id}.json  — runtime audit record
+  draft_assessment_{run_id}.md       — cited compliance assessment
+```
+
+### Policy Enforcement Points
+
+```
+                    Agent decides to invoke tool
+                               │
+                               ▼
+                  ┌─────────────────────────────┐
+                  │    PEP-1: Pre-Call Validation│
+                  │  1. Tool registered?         │ NO  → DENIED + alert + terminate
+                  │  2. Autonomy class?          │ DENIED → reject immediately
+                  │  3. Scope bounds valid?      │ HUMAN_GATED → require approval token
+                  │  4. Call count < max?        │ NO  → circuit breaker
+                  │  5. Prohibited action?       │ YES → DENIED + alert
+                  │  6. Data classification OK?  │ NO  → DENIED
+                  └─────────────┬───────────────┘
+                                │ ALL 6 PASS
+                                ▼
+                           Tool executes
+                                │
+                                ▼
+                  ┌─────────────────────────────┐
+                  │    PEP-2: Post-Call          │
+                  │    Sanitization              │
+                  │  1. Evidence lineage valid?  │ NO  → strip + flag
+                  │  2. PII detected?            │ YES → redact
+                  │  3. Injection pattern?       │ YES → sanitize + flag
+                  │  4. Result size OK?          │ NO  → truncate
+                  └─────────────┬───────────────┘
+                                │ ALL 4 PASS
+                                ▼
+                   Result enters reasoning state
+```
+
+### Portfolio Arc
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  P4  trust-layer-multiagent      ORCHESTRATION LAYER     │
+│      Agent-to-agent trust, delegation, audit chains      │
+├──────────────────────────────────────────────────────────┤
+│  P3  trust-layer-agent           REASONING LAYER  ◄ here │
+│      Autonomous action, tool use, human oversight        │
+├──────────────────────────────────────────────────────────┤
+│  P2  trust-layer-rag             RETRIEVAL LAYER         │
+│      Knowledge retrieval, guardrails, citation integrity │
+├──────────────────────────────────────────────────────────┤
+│  P1  responsible-mlops-          DATA AND MODEL LAYER    │
+│      risk-engine                 Fairness, drift, ATO    │
+└──────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Governance Artifacts
 
 Three artifacts are the foundation before any code:
