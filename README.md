@@ -232,29 +232,12 @@ Langfuse traces are the audit trail — every state transition, tool invocation,
 
 ---
 
-## Portfolio Arc
+## Status
 
-| Project | Layer | Governance concerns |
-|---|---|---|
-| P1 `responsible-mlops-risk-engine` | Data and model layer | Training data, fairness, drift monitoring |
-| P2 `trust-layer-rag` | Retrieval layer | Knowledge retrieval, guardrails, PII, citation integrity |
-| P3 `trust-layer-agent` *(this project)* | Reasoning layer | Autonomous action, tool use, human oversight, audit trail |
-| `trust-layer-multiagent` | Orchestration layer | Agent-to-agent trust, delegation, coordination governance |
-
----
-
-## Build Status
-
-| Phase | Status |
-|---|---|
-| Governance Framework Document | Complete |
-| Agent Implementation (LangGraph state machine + PEPs) | Complete |
-| Evaluation Suite (19 scenarios, three tiers) | Complete — **19/19 passing** |
-| Streamlit UI + human approval gate | Complete |
-| Decision Log | Running (DL-031 → DL-040) |
-
-Evaluation results: [`eval/results/eval_report.md`](eval/results/eval_report.md) — 8 happy-path,
-7 failure-mode, and 4 adversarial scenarios, all passing.
+Complete and verified end to end — governance framework, LangGraph agent with PEP
+enforcement, Streamlit UI with human approval gate, and a three-tier evaluation suite
+passing **19/19** (8 happy-path, 7 failure-mode, 4 adversarial). Decision log spans
+DL-031 → DL-040. Full results: [`eval/results/eval_report.md`](eval/results/eval_report.md).
 
 ---
 
