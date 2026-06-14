@@ -1,5 +1,4 @@
-# Beyond Autonomy: Architecting the Trust Layer for Enterprise Agentic AI
-## Governance Framework for Autonomous AI Systems in Federal and Enterprise Environments
+# Governance Framework for Autonomous AI Systems in Federal and Enterprise Environments
 
 **Version:** 1.0
 **Last Updated:** 2026-05-11
