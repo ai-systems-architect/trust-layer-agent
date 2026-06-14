@@ -21,6 +21,32 @@ The answer has three components:
 
 ---
 
+## Quickstart
+
+```bash
+# 1. Install
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. Configure (AWS Bedrock + Langfuse keys)
+cp .env.example .env        # then fill in credentials
+
+# 3. Run one agent assessment (synthetic AC-family fixtures)
+python scripts/run_agent.py
+
+# 4. Launch the UI — live status + human approval gate at :8501
+bash scripts/run_ui.sh
+
+# 5. Run the evaluation suite → eval/results/eval_report.md
+python eval/generate_report.py
+```
+
+The agent runs entirely against synthetic IAM/CloudTrail fixtures — no real AWS account
+or production data required. P2 (`trust-layer-rag`) is optional: if it is not running on
+`:8000`, the agent degrades gracefully and routes to human review (see DL-038).
+
+---
+
 ## The Problem
 
 Federal agencies and enterprises are deploying agentic AI without governance frameworks designed for autonomous, multi-step behavior. NIST AI RMF, AI 600-1, and OMB M-24-10 do not prescribe how to instrument agents. The gap between "deploying agents" and "governing agents" is the problem this repository addresses.
@@ -31,18 +57,40 @@ Federal agencies and enterprises are deploying agentic AI without governance fra
 
 ```
 config/trust_ledger.yaml                       Tool registration and governance controls
-docs/framework.md                              Governance framework document (in progress)
+docs/framework.md                              Governance framework — plain-language version
+docs/framework_reference.md                    Governance framework — full technical specification
+docs/architecture.md                           System architecture and diagrams
+docs/decision_log.md                           Architecture decision log (DL-031 onward)
 docs/agent_risk_classification_matrix.md       Risk tier definitions
-docs/decision_log.md                           Architecture decision log
 docs/examples/governance_decision.json         Runtime governance artifact schema
-src/                                           Agent implementation
-eval/                                          Evaluation suite
+src/agent/                                     LangGraph state machine, PEPs, LLM, tools
+src/tools/                                      Tool implementations (T-001, T-004, T-005)
+src/ui/app.py                                  Streamlit UI — run config, live status, approval gate
+scripts/run_agent.py                           CLI entry point for a single agent run
+scripts/run_ui.sh                              Launch the Streamlit UI
+eval/                                          Three-tier evaluation suite (19 scenarios)
+eval/results/eval_report.md                    Generated evaluation report
+fixtures/                                       Synthetic IAM policies and CloudTrail events
+outputs/                                        Runtime artifacts — governance decisions + drafts
 FUTURE_WORK.md                                 Documented extensions, not built
 ```
 
 ---
 
 ## What's Built
+
+**How a run works, in one paragraph.** A reviewer asks the agent to assess an AC-family
+control. The agent *plans* the evidence it needs, then *gathers* it by calling three
+read-only tools — IAM policies (T-001), CloudTrail events (T-004), and compliance
+requirements from P2's RAG service (T-005) — with every call validated by PEP-1 before
+execution and sanitized by PEP-2 after. It then *assesses sufficiency*: if the evidence
+is incomplete it loops back to gather more, and if it can never reach sufficiency a
+circuit breaker fires. Once sufficient, it *drafts* a cited compliance assessment with a
+frontier model. The draft does **not** auto-submit — submission is a HIGH-risk,
+HUMAN_GATED action, so the run suspends at *awaiting human review* and writes a
+`governance_decision.json` audit record. A human approves (run ends, artifact released)
+or rejects (back to drafting). Every transition, tool call, and PEP outcome is traced to
+Langfuse.
 
 ### Agent State Machine
 
@@ -199,10 +247,14 @@ Langfuse traces are the audit trail — every state transition, tool invocation,
 
 | Phase | Status |
 |---|---|
-| Phase 1 — Governance Framework Document | In Progress |
-| Agent Implementation | Planned |
-| Evaluation Suite | Planned |
-| Phase 4 — Decision Log | Running |
+| Governance Framework Document | Complete |
+| Agent Implementation (LangGraph state machine + PEPs) | Complete |
+| Evaluation Suite (19 scenarios, three tiers) | Complete — **19/19 passing** |
+| Streamlit UI + human approval gate | Complete |
+| Decision Log | Running (DL-031 → DL-040) |
+
+Evaluation results: [`eval/results/eval_report.md`](eval/results/eval_report.md) — 8 happy-path,
+7 failure-mode, and 4 adversarial scenarios, all passing.
 
 ---
 
