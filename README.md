@@ -138,21 +138,12 @@ Output artifacts (outputs/):
 
 ## Portfolio Arc
 
-```
-┌──────────────────────────────────────────────────────────┐
-│  P4  trust-layer-multiagent      ORCHESTRATION LAYER     │
-│      Agent-to-agent trust, delegation, audit chains      │
-├──────────────────────────────────────────────────────────┤
-│  P3  trust-layer-agent           REASONING LAYER  ◄ here │
-│      Autonomous action, tool use, human oversight        │
-├──────────────────────────────────────────────────────────┤
-│  P2  trust-layer-rag             RETRIEVAL LAYER         │
-│      Knowledge retrieval, guardrails, citation integrity │
-├──────────────────────────────────────────────────────────┤
-│  P1  responsible-mlops-          DATA AND MODEL LAYER    │
-│      risk-engine                 Fairness, drift, ATO    │
-└──────────────────────────────────────────────────────────┘
-```
+| Project | Layer | Status |
+|---|---|---|
+| [`responsible-mlops-risk-engine`](https://github.com/ai-systems-architect/responsible-mlops-risk-engine) | Data and model | ✅ Complete |
+| [`trust-layer-rag`](https://github.com/ai-systems-architect/trust-layer-rag) | Retrieval | ✅ Complete |
+| **[`trust-layer-agent`](https://github.com/ai-systems-architect/trust-layer-agent)** | **Reasoning and action** | **✅ Complete** |
+| `trust-layer-multiagent` | Orchestration | 📝 Article-first — code planned |
 
 ---
 
