@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Last Updated:** 2026-05-11
-**Status:** Phase 1 Complete
+**Status:** Complete
 
 > For full technical specification, enforcement details, and reference tables see [framework_reference.md](framework_reference.md).
 
@@ -131,7 +131,7 @@ Full specification: [Section 7 of framework_reference.md](framework_reference.md
 
 Standard ML evaluation metrics break for agentic systems: non-determinism, multi-step error propagation, and the hedge problem (compliance hedging is correct behavior, not evasion) all require a different approach.
 
-The three-tier methodology addresses this: deterministic code-based graders for binary governance assertions, LLM-as-judge for reasoning quality and hedge appropriateness, and human review criteria for edge cases neither tier can resolve. The evaluation set covers 18 scenarios: 8 happy path, 7 failure modes, 3 adversarial.
+The three-tier methodology addresses this: deterministic code-based graders for binary governance assertions, LLM-as-judge for reasoning quality and hedge appropriateness, and human review criteria for edge cases neither tier can resolve. The evaluation set covers 19 scenarios: 8 happy path, 7 failure modes, 4 adversarial.
 
 Full specification: [Section 8 of framework_reference.md](framework_reference.md#8-evaluation-methodology)
 
@@ -157,10 +157,10 @@ Full specification: [Section 10 of framework_reference.md](framework_reference.m
 ### Framework Document (complete — Phase 1)
 All 10 sections complete: Scope, Trust Boundaries, Agent Identity (incl. Reasoning Trace), Tool-Use Governance, Failure Mode Catalog, Threat Model, Risk Classification Matrix, Evaluation Methodology, Regulatory Mapping (incl. FedRAMP ConMon), Inheritance Pattern.
 
-### Agent Implementation (planned)
+### Agent Implementation (complete)
 LangGraph single-agent system demonstrating the framework against AC-2, AC-3, AC-6, AC-17 controls.
 
-### Evaluation Suite (planned)
+### Evaluation Suite (complete)
 Three-tier evaluation: deterministic graders, LLM-as-judge, human review criteria. Covers all seven failure modes plus adversarial scenarios.
 
 ---

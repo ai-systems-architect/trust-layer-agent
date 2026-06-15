@@ -21,5 +21,6 @@
   "pep_outcomes": {
     "pre_call": "PASSED",
     "post_call": "PASSED"
-  }
+  },
+  "retention_policy": "FISMA_LONG_TERM"
 }

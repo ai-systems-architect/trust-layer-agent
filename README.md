@@ -2,7 +2,7 @@
 
 **`trust-layer-agent`** · Reasoning layer (P3) of the Trust Layer portfolio
 
-Federal agencies and enterprises are deploying agentic AI — systems that don't just answer questions but take autonomous actions across multiple steps. The governance frameworks designed for static models don't transfer. This project demonstrates what governed agentic AI looks like in production: a working compliance agent instrumented against a governance framework that any federal program or enterprise AI risk team can adopt.
+Federal agencies and enterprises are deploying agentic AI — systems that don't just answer questions but take autonomous actions across multiple steps. The governance frameworks designed for static models don't transfer. This project demonstrates what governed agentic AI looks like as a production-grade governance pattern implemented against synthetic data: a working compliance agent instrumented against a governance framework that any federal program or enterprise AI risk team can adopt.
 
 The agent collects audit evidence for NIST 800-53 AC-family controls, assesses sufficiency, generates a cited compliance assessment, and gates submission behind a mandatory human approval checkpoint — with every tool call validated against a trust ledger, every evidence item carrying a lineage hash, and every governance decision written as a runtime audit artifact.
 
@@ -10,9 +10,25 @@ The agent collects audit evidence for NIST 800-53 AC-family controls, assesses s
 
 ---
 
+## Scope and Assumptions
+
+This is a production-grade governance pattern implemented against synthetic data in a non-production deployment.
+
+| Dimension | This Implementation | Production Requirement |
+|---|---|---|
+| Data | Synthetic IAM policies and CloudTrail fixtures | Real AWS telemetry with data handling agreements |
+| Identity | Execution identity declared at application layer; no real STS session issuance | Real IAM role + STS short-lived credentials |
+| Observability | Langfuse Cloud Hobby tier (synthetic trace data only) | Self-hosted Langfuse within FedRAMP boundary |
+| Compliance text | P2 RAG over NIST corpus (unclassified) | Program-specific corpus with appropriate classification controls |
+| ATO | Not applicable — reference implementation | Program-level ATO with FedRAMP-aligned infrastructure |
+
+Federal alignment is conceptual and pattern-based. Actual deployment into an ATO boundary requires FedRAMP-aligned infrastructure, self-hosted observability within the authorization boundary, and program-level authority to operate. Production extension paths are documented in `FUTURE_WORK.md`.
+
+---
+
 ## Overview
 
-This project is a reference implementation of accountable autonomous AI for federal compliance workflows. It answers one question: what does a governed agentic AI system look like, end to end, in a production-grade environment?
+This project is a reference implementation of accountable autonomous AI for federal compliance workflows. It answers one question: what does a governed agentic AI system look like, end to end, as a production-grade pattern implemented against synthetic data?
 
 The answer has three components:
 
@@ -179,6 +195,8 @@ Three artifacts are the foundation before any code:
 - **Risk Classification Matrix** (`docs/agent_risk_classification_matrix.md`) — four tiers (Low → Critical) mapping autonomy class, human approval requirements, failure impact, and logging requirements.
 - **Governance Decision Schema** (`docs/examples/governance_decision.json`) — runtime artifact capturing tool request, approval status, evidence lineage, and PEP outcomes per agent run.
 
+Execution identity is enforced at the application layer (trust ledger + PEP-1 scope bounds). Production wiring to real AWS STS for short-lived session issuance is documented in `FUTURE_WORK.md` and decision log DL-035.
+
 ---
 
 ## How a Run Works
@@ -208,7 +226,7 @@ outcome is traced to Langfuse.
 
 ## Observability
 
-Langfuse traces are the audit trail — every state transition, tool invocation, PEP outcome, and token count is captured as a first-class governance artifact, not observability tooling.
+Langfuse captures the reasoning trace and observability evidence — token counts, state transition latency, and tool call telemetry. Formal audit artifacts (`governance_decision_{run_id}.json` and `draft_assessment_{run_id}.md`) are written separately to `outputs/` and are the authoritative runtime record.
 
 ---
 
@@ -217,7 +235,7 @@ Langfuse traces are the audit trail — every state transition, tool invocation,
 Complete and verified end to end — governance framework, LangGraph agent with PEP
 enforcement, Streamlit UI with human approval gate, and a three-tier evaluation suite
 passing **19/19** (8 happy-path, 7 failure-mode, 4 adversarial). Decision log spans
-DL-031 → DL-040. Full results: [`eval/results/eval_report.md`](eval/results/eval_report.md).
+DL-031 → DL-041. Full results: [`eval/results/eval_report.md`](eval/results/eval_report.md).
 
 ---
 

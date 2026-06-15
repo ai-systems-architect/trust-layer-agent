@@ -185,3 +185,22 @@ Low-consequence steps (metadata extraction, intent classification, formatting) a
 - No explicit routing policy — rejected. Implicit defaults are ungoverned decisions. The classification must be explicit and auditable.
 
 ---
+
+## DL-041 — Indirect Prompt Injection Defense: Scope Invariant at PEP-1
+
+**Decision:** Control family and account scope invariants are enforced at PEP-1 (pre-call validation) on every tool invocation rather than via a separate cryptographic state checker at each node.
+**Date:** 2026-06-02
+
+**Rationale:** The indirect prompt injection risk via retrieved evidence content is real: a malicious document in the retrieval corpus could instruct the agent to shift focus from AC-family controls to IA-family, or to target a different account ID. This is the confused-deputy pattern at the knowledge boundary (Boundary 3).
+
+The current mitigation operates at two layers. First, PEP-2 post-call sanitization scans tool results for injection patterns before they enter reasoning state — catching instruction-like content in retrieved evidence. Second, PEP-1 scope bounds validation checks declared control_family and declared_account_id on every tool invocation — any call targeting out-of-scope parameters is rejected regardless of what the agent's reasoning state contains.
+
+The alternative — a cryptographic invariant checker that hashes the control_family string and validates it at every LangGraph node transition — would provide stronger guarantees but at the cost of implementation complexity disproportionate to a reference implementation. The architectural principle is documented here; the cryptographic implementation is a production hardening step.
+
+**What this does not fully address:** If a prompt injection successfully mutates the agent's tool call parameters within a single node before PEP-1 fires, and the mutation targets an in-scope parameter (same control family, same account, different tool behavior), PEP-1 will not catch it. PEP-2 injection scanning is the primary defense for this path. This residual risk is consistent with the threat model residual risk rating of LOW for TM-001.
+
+**Alternatives evaluated:**
+- Cryptographic control_family hash at every node — rejected for portfolio scope. Correct production hardening step; documented in FUTURE_WORK.md.
+- Trust LLM instruction-following alone — rejected. Prompt-level scope instructions are not a governance control.
+
+---

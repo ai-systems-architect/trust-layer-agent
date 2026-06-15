@@ -2,7 +2,7 @@
 
 **Version:** 1.0
 **Last Updated:** 2026-05-11
-**Status:** In Progress
+**Status:** Complete
 
 ---
 
@@ -487,6 +487,8 @@ Applied after every tool invocation, before results enter agent reasoning state.
 
 #### PEP-3 — Pre-Output Release
 
+> **Implementation status:** PEP-3 is specified in this framework and enforced structurally via the LangGraph state machine (drafting state is unreachable without passing sufficiency check; submission requires HUMAN_GATED approval token). Full programmatic PEP-3 as a named checkpoint function is a production extension — see `FUTURE_WORK.md`.
+
 Applied before the agent produces its final output artifact. This PEP operates at the run level, not the tool level.
 
 **Pre-output checks:**
@@ -812,7 +814,7 @@ Documented criteria for edge cases that neither deterministic graders nor the LL
 
 ### 8.3 Evaluation Scenario Set
 
-The evaluation set covers 18 scenarios: 8 happy path, 7 operational failure modes, 3 adversarial.
+The evaluation set covers 19 scenarios: 8 happy path, 7 operational failure modes, 4 adversarial.
 
 #### Happy Path Scenarios (8)
 
