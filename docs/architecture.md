@@ -77,9 +77,11 @@ Output artifacts (outputs/):
 │   review            │  governance_decision.json written
 └──────┬──────────────┘
        │ APPROVED              │ REJECTED
-┌──────▼──────┐         ┌──────▼──────┐
-│     END     │         │   drafting  │
-└─────────────┘         └─────────────┘
+┌──────▼──────┐         ┌──────▼───────────────────────┐
+│     END     │         │   drafting                    │
+└─────────────┘         │   (rejection reason passed    │
+                        │    in — new draft generated)  │
+                        └───────────────────────────────┘
 ```
 
 State is ephemeral per run (DL-036). No state persists across agent invocations. The
