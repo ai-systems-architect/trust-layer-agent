@@ -2,7 +2,7 @@
 
 **`trust-layer-agent`** · Reasoning layer (P3) of the Trust Layer portfolio
 
-Federal agencies and enterprises are deploying agentic AI — systems that don't just answer questions but take autonomous actions across multiple steps. The governance frameworks designed for static models don't transfer. This project demonstrates what governed agentic AI looks like as a production-grade governance pattern implemented against synthetic data: a working compliance agent instrumented against a governance framework that any federal program or enterprise AI risk team can adopt.
+Federal agencies and enterprises are deploying agentic AI — systems that don't just answer questions but take autonomous actions across multiple steps. The governance frameworks designed for static models don't transfer. This project demonstrates what a production-grade governed agentic AI pattern looks like implemented end to end: a working compliance agent instrumented against a governance framework that any federal program or enterprise AI risk team can adopt.
 
 The agent collects audit evidence for NIST 800-53 AC-family controls, assesses sufficiency, generates a cited compliance assessment, and gates submission behind a mandatory human approval checkpoint — with every tool call validated against a trust ledger, every evidence item carrying a lineage hash, and every governance decision written as a runtime audit artifact.
 
@@ -16,13 +16,12 @@ This is a production-grade governance pattern implemented against synthetic data
 
 | Dimension | This Implementation | Production Requirement |
 |---|---|---|
-| Data | Synthetic IAM policies and CloudTrail fixtures | Real AWS telemetry with data handling agreements |
-| Identity | Execution identity declared at application layer; no real STS session issuance | Real IAM role + STS short-lived credentials |
-| Observability | Langfuse Cloud Hobby tier (synthetic trace data only) | Self-hosted Langfuse within FedRAMP boundary |
-| Compliance text | P2 RAG over NIST corpus (unclassified) | Program-specific corpus with appropriate classification controls |
+| Data | Synthetic IAM + CloudTrail fixtures | Real AWS telemetry with data handling agreements |
+| Identity | Application-layer declaration; no real STS | Real IAM role + STS short-lived session |
+| Observability | Langfuse Cloud Hobby (synthetic traces only) | Self-hosted Langfuse within FedRAMP boundary |
 | ATO | Not applicable — reference implementation | Program-level ATO with FedRAMP-aligned infrastructure |
 
-Federal alignment is conceptual and pattern-based. Actual deployment into an ATO boundary requires FedRAMP-aligned infrastructure, self-hosted observability within the authorization boundary, and program-level authority to operate. Production extension paths are documented in `FUTURE_WORK.md`.
+Federal alignment is pattern-based. Actual deployment into an ATO boundary requires FedRAMP-aligned infrastructure and program-level authority to operate. Production extension paths are documented in `FUTURE_WORK.md`.
 
 ---
 
@@ -45,6 +44,22 @@ Federal agencies and enterprises are deploying agentic AI without governance fra
 ---
 
 ## What's Built
+
+Three artifacts are complete. The governance framework specifies every rule before any code was written. The agent proves the framework works. The evaluation suite proves the agent fails safely — 19/19 scenarios pass across happy path, failure mode, and adversarial tiers.
+
+A reviewer asks the agent to assess an AC-family control. The agent *plans* the evidence
+it needs, then *gathers* it by calling three read-only tools — IAM policies (T-001),
+CloudTrail events (T-004), and compliance requirements from P2's RAG service (T-005) —
+with every call validated by PEP-1 before execution and sanitized by PEP-2 after. It then
+*assesses sufficiency*: if the evidence is incomplete it loops back to gather more, and if
+it can never reach sufficiency a circuit breaker fires. Once sufficient, it *drafts* a
+cited compliance assessment with a frontier model. The draft does **not** auto-submit —
+submission is a HIGH-risk, HUMAN_GATED action, so the run suspends at *awaiting human
+review* and writes a `governance_decision.json` audit record. A human approves (run ends,
+artifact released) or rejects (back to drafting). Every transition, tool call, and PEP
+outcome is traced to Langfuse.
+
+Three tiers are complete: governance framework, working agent, and evaluation suite. The diagrams below show the state machine, system architecture, and policy enforcement sequence.
 
 ### Agent State Machine
 
@@ -195,24 +210,6 @@ Three artifacts are the foundation before any code:
 - **Risk Classification Matrix** (`docs/agent_risk_classification_matrix.md`) — four tiers (Low → Critical) mapping autonomy class, human approval requirements, failure impact, and logging requirements.
 - **Governance Decision Schema** (`docs/examples/governance_decision.json`) — runtime artifact capturing tool request, approval status, evidence lineage, and PEP outcomes per agent run.
 
-Execution identity is enforced at the application layer (trust ledger + PEP-1 scope bounds). Production wiring to real AWS STS for short-lived session issuance is documented in `FUTURE_WORK.md` and decision log DL-035.
-
----
-
-## How a Run Works
-
-A reviewer asks the agent to assess an AC-family control. The agent *plans* the evidence
-it needs, then *gathers* it by calling three read-only tools — IAM policies (T-001),
-CloudTrail events (T-004), and compliance requirements from P2's RAG service (T-005) —
-with every call validated by PEP-1 before execution and sanitized by PEP-2 after. It then
-*assesses sufficiency*: if the evidence is incomplete it loops back to gather more, and if
-it can never reach sufficiency a circuit breaker fires. Once sufficient, it *drafts* a
-cited compliance assessment with a frontier model. The draft does **not** auto-submit —
-submission is a HIGH-risk, HUMAN_GATED action, so the run suspends at *awaiting human
-review* and writes a `governance_decision.json` audit record. A human approves (run ends,
-artifact released) or rejects (back to drafting). Every transition, tool call, and PEP
-outcome is traced to Langfuse.
-
 ---
 
 ## Regulatory Alignment
@@ -226,7 +223,7 @@ outcome is traced to Langfuse.
 
 ## Observability
 
-Langfuse captures the reasoning trace and observability evidence — token counts, state transition latency, and tool call telemetry. Formal audit artifacts (`governance_decision_{run_id}.json` and `draft_assessment_{run_id}.md`) are written separately to `outputs/` and are the authoritative runtime record.
+Langfuse captures the reasoning trace and observability evidence — state transition latency, tool invocation records, PEP outcomes, and token counts per node. Formal audit artifacts (`governance_decision_{run_id}.json` and `draft_assessment_{run_id}.md`) are written separately to `outputs/` and are the authoritative runtime record.
 
 ---
 
@@ -261,6 +258,6 @@ bash scripts/run_ui.sh
 python eval/generate_report.py
 ```
 
-The agent runs entirely against synthetic IAM/CloudTrail fixtures — no real AWS account
-or production data required. P2 (`trust-layer-rag`) is optional: if it is not running on
-`:8000`, the agent degrades gracefully and routes to human review (see DL-038).
+The agent runs entirely against synthetic IAM/CloudTrail fixtures — no real AWS account or production data required. P2 (`trust-layer-rag`) must be running on `:8000` — T-005 calls the governed retrieval API to supply compliance requirement text for each control. Without P2, T-005 degrades gracefully (FM-002) but sufficiency assessment will fail for most controls and the circuit breaker will fire. See DL-038 for the documented behavior change.
+
+Execution identity (`audit-readonly-role`) is declared at the application layer — no real AWS STS session issuance. Production wiring is documented in `FUTURE_WORK.md` and DL-035.
