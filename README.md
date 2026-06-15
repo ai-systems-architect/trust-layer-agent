@@ -88,9 +88,11 @@ Three tiers are complete: governance framework, working agent, and evaluation su
 │   review            │  governance_decision.json written
 └──────┬──────────────┘
        │ APPROVED              │ REJECTED
-┌──────▼──────┐         ┌──────▼──────┐
-│     END     │         │   drafting  │
-└─────────────┘         └─────────────┘
+┌──────▼──────┐         ┌──────▼─────────────────────┐
+│     END     │         │  drafting                  │
+└─────────────┘         │  (rejection reason passed  │
+                        │   in, new draft generated) │
+                        └────────────────────────────┘
 ```
 
 ### System Architecture
