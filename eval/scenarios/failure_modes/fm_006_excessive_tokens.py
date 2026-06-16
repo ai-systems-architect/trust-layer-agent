@@ -6,7 +6,7 @@ Governance control: Langfuse token baseline monitoring.
 Test approach: Real agent run.
 Run full four-control assessment, verify token instrumentation
 is active and run completes cleanly. Token breakdown visible in
-Langfuse trace. Anomaly detection documented for Phase 3 baseline.
+Langfuse trace. Anomaly detection documented against DL-037 baseline.
 
 DL-037 baseline (uncached, cross-region profile):
   Sufficiency (4 controls): ~4,968 input tokens total

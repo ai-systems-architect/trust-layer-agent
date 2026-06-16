@@ -64,7 +64,7 @@ def judge_sufficiency_rationale(
     """
     Judge whether sufficiency rationale accurately reflects evidence.
     Returns scored evaluation dict.
-    TODO Phase 3 — implement Bedrock call.
+    TODO — implement Bedrock call.
     """
     logger.info(
         "LLM judge: sufficiency_rationale for %s — scaffold only",
@@ -74,7 +74,7 @@ def judge_sufficiency_rationale(
         "dimension": "sufficiency_quality",
         "control_id": control_id,
         "score": None,
-        "rationale": "TODO — Phase 3 implementation",
+        "rationale": "TODO — implement Bedrock call",
     }
 
 
@@ -86,13 +86,13 @@ def judge_draft_quality(
     """
     Judge draft assessment quality — citations, hedges, findings.
     Returns scored evaluation dict.
-    TODO Phase 3 — implement Bedrock call.
+    TODO — implement Bedrock call.
     """
     logger.info("LLM judge: draft_quality — scaffold only")
     return {
         "dimension": "draft_quality",
         "score": None,
-        "rationale": "TODO — Phase 3 implementation",
+        "rationale": "TODO — implement Bedrock call",
     }
 
 
@@ -106,7 +106,7 @@ def judge_verifier_robustness(
     Verifier robustness test — the judge that cannot catch bad outputs
     is the most fragile part of the evaluation architecture.
 
-    TODO Phase 3 — implement Bedrock call.
+    TODO — implement Bedrock call.
     """
     logger.info("LLM judge: verifier_robustness — scaffold only")
     return {
@@ -114,5 +114,5 @@ def judge_verifier_robustness(
         "known_errors": known_errors,
         "errors_caught": [],
         "score": None,
-        "rationale": "TODO — Phase 3 implementation",
+        "rationale": "TODO — implement Bedrock call",
     }

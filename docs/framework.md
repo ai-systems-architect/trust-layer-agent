@@ -156,7 +156,7 @@ Full specification: [Section 10 of framework_reference.md](framework_reference.m
 - **Risk Classification Matrix** (`docs/agent_risk_classification_matrix.md`) — four-tier risk framework
 - **Governance Decision Schema** (`docs/examples/governance_decision.json`) — runtime audit artifact
 
-### Framework Document (complete — Phase 1)
+### Framework Document (complete)
 All 10 sections complete: Scope, Trust Boundaries, Agent Identity (incl. Reasoning Trace), Tool-Use Governance, Failure Mode Catalog, Threat Model, Risk Classification Matrix, Evaluation Methodology, Regulatory Mapping (incl. FedRAMP ConMon), Inheritance Pattern.
 
 ### Agent Implementation (complete)

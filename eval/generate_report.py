@@ -1,5 +1,5 @@
 """
-Phase 3 Evaluation Report Generator — trust-layer-agent
+Evaluation Report Generator — trust-layer-agent
 Runs all 19 scenarios and produces eval/results/eval_report.md.
 
 Usage:
@@ -169,7 +169,7 @@ def generate_report(results: dict) -> str:
 ## Beyond Autonomy: Architecting the Trust Layer for Enterprise Agentic AI
 
 **Generated:** {now}
-**Eval suite version:** Phase 3 — three-tier evaluation methodology
+**Eval suite version:** Three-tier evaluation methodology
 **Reference:** `docs/framework_reference.md` Section 8
 
 ---
@@ -278,7 +278,7 @@ sufficiency rationale and draft quality evaluation.
 Documented criteria in `eval/human_review_log.md`.
 Triggers: LLM judge score ≤2, novel failure modes,
 conflicting grader results, adversarial edge cases.
-No entries during Phase 3 — all scenarios resolved by
+No entries — all scenarios resolved by
 Tier 1 and Tier 2.
 
 ---
@@ -336,7 +336,7 @@ containment.
 
 ## Human Review Log
 
-No entries during Phase 3 evaluation.
+No entries.
 All 19 scenarios resolved by deterministic graders (Tier 1)
 and LLM-as-judge (Tier 2).
 Human review criteria documented in `eval/human_review_log.md`.
@@ -349,7 +349,7 @@ Human review criteria documented in `eval/human_review_log.md`.
 |---|---|---|
 | `responsible-mlops-risk-engine` | Data and model layer | ✅ Complete |
 | `trust-layer-rag` | Retrieval layer | ✅ Complete |
-| **`trust-layer-agent`** | **Reasoning and action layer** | **✅ Phase 3 Complete** |
+| **`trust-layer-agent`** | **Reasoning and action layer** | **✅ Complete** |
 | `trust-layer-multiagent` | Orchestration layer | Planned |
 
 ---
@@ -361,7 +361,7 @@ Human review criteria documented in `eval/human_review_log.md`.
 
 
 def main() -> None:
-    logger.info("Generating Phase 3 evaluation report")
+    logger.info("Generating evaluation report")
     logger.info("Running all 19 scenarios — P2 must be running")
 
     results = run_all_scenarios()

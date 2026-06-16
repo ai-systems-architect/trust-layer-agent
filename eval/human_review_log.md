@@ -1,4 +1,4 @@
-# Human Review Log — Phase 3 Evaluation
+# Human Review Log
 
 Tier 3 of the three-tier evaluation methodology.
 Documents edge cases that neither deterministic graders nor
@@ -26,4 +26,4 @@ Each entry:
 
 ## Entries
 
-*(No entries yet — populated during Phase 3 eval runs)*
+*(No entries — all scenarios resolved by Tier 1 and Tier 2.)*

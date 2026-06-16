@@ -1,5 +1,5 @@
 """
-Phase 3 Evaluation Runner — trust-layer-agent
+Evaluation Runner — trust-layer-agent
 Runs all evaluation scenarios and produces eval_report.md.
 
 Three-tier evaluation architecture:
@@ -188,7 +188,7 @@ def run_adversarial() -> list[dict]:
 
 def run_all() -> list[dict]:
     """Run all evaluation scenarios."""
-    logger.info("Phase 3 Evaluation Suite — starting full run")
+    logger.info("Evaluation Suite — starting full run")
     hp_results = run_happy_path()
     fm_results = run_failure_modes()
     adv_results = run_adversarial()
@@ -203,7 +203,7 @@ def run_all() -> list[dict]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="trust-layer-agent Phase 3 Evaluation Runner"
+        description="trust-layer-agent Evaluation Runner"
     )
     parser.add_argument(
         "--tier",
@@ -223,7 +223,7 @@ def main() -> None:
 
     if args.scenario:
         logger.info("Single scenario mode: %s", args.scenario)
-        # TODO Phase 3 — route to individual scenario by prefix
+        # TODO — route to individual scenario by prefix
     elif args.tier:
         logger.info("Single tier mode: %s", args.tier)
         if args.tier == "happy_path":
