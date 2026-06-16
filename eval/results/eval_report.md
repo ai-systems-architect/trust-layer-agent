@@ -1,7 +1,7 @@
 # Phase 3 Evaluation Report — trust-layer-agent
 ## Beyond Autonomy: Architecting the Trust Layer for Enterprise Agentic AI
 
-**Generated:** 2026-06-04 14:58 UTC
+**Generated:** 2026-06-16 03:35 UTC
 **Eval suite version:** Phase 3 — three-tier evaluation methodology
 **Reference:** `docs/framework_reference.md` Section 8
 
