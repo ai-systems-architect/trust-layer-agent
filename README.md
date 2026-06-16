@@ -229,12 +229,25 @@ Langfuse captures the reasoning trace and observability evidence — state trans
 
 ---
 
+## Evaluation Results
+
+19/19 scenarios pass across three tiers.
+
+| Tier | Scenarios | Result |
+|---|---|---|
+| Happy path | 8 | ✅ 8/8 |
+| Failure modes | 7 | ✅ 7/7 |
+| Adversarial | 4 | ✅ 4/4 |
+
+Key findings: FM-005 (sufficiency gate bypass) confirmed the hard state machine gate catches 100% of bypass attempts. TM-004 (verifier robustness) confirmed the LLM judge identifies errors in a deliberately bad assessment without being told what to look for. TM-001 (prompt injection) confirmed detection fires at the evidence layer — injection never reached agent reasoning state.
+
+Full report: [`eval/results/eval_report.md`](eval/results/eval_report.md)
+
+---
+
 ## Status
 
-Complete and verified end to end — governance framework, LangGraph agent with PEP
-enforcement, Streamlit UI with human approval gate, and a three-tier evaluation suite
-passing **19/19** (8 happy-path, 7 failure-mode, 4 adversarial). Decision log spans
-DL-031 → DL-041. Full results: [`eval/results/eval_report.md`](eval/results/eval_report.md).
+Complete and verified end to end — governance framework, LangGraph agent with PEP enforcement, Streamlit UI with human approval gate, and a three-tier evaluation suite passing 19/19 (8 happy-path, 7 failure-mode, 4 adversarial). Decision log spans DL-031 → DL-041. Full results: [`eval/results/eval_report.md`](eval/results/eval_report.md)
 
 ---
 
