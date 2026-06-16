@@ -192,7 +192,7 @@ pytest | GitHub Actions
 | [`responsible-mlops-risk-engine`](https://github.com/ai-systems-architect/responsible-mlops-risk-engine) | Data and model | ✅ Complete |
 | [`trust-layer-rag`](https://github.com/ai-systems-architect/trust-layer-rag) | Retrieval | ✅ Complete |
 | **[`trust-layer-agent`](https://github.com/ai-systems-architect/trust-layer-agent)** | **Reasoning and action** | **✅ Complete** |
-| `trust-layer-multiagent` | Orchestration | 📝 Article-first — code planned |
+| `trust-layer-multiagent` | Orchestration | 🚧 In Progress |
 
 ---
 
