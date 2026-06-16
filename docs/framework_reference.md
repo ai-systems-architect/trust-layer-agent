@@ -1163,6 +1163,8 @@ The governing principle: **deterministic at every governance boundary, probabili
 
 Allowing an LLM to decide whether to skip a human approval gate is a governance failure by design. Allowing an LLM to decide how to phrase a CloudTrail query is appropriate use of its capabilities.
 
+The governance failure this section prevents: a system that detects a governance boundary, partially adjusts behavior, but never crosses into a hard stop or escalation — detecting the hazard but proceeding anyway. Every deterministic boundary in this framework is a full stop, not a slowdown.
+
 ---
 
 ### 11.2 Deterministic Boundaries
