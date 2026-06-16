@@ -1,4 +1,5 @@
 # Beyond Autonomy: Architecting the Trust Layer for Enterprise Agentic AI
+![Visitor Count](https://api.visitorbadge.io/api/VisitorHit?user=ai-systems-architect&repo=trust-layer-agent&countColor=%23263759)
 
 **`trust-layer-agent`** · Reasoning layer (P3) of the Trust Layer portfolio
 
