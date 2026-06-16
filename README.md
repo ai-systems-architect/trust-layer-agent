@@ -249,7 +249,7 @@ Langfuse captures the reasoning trace and observability evidence — state trans
 | Failure modes | 7 | ✅ 7/7 |
 | Adversarial | 4 | ✅ 4/4 |
 
-Key findings: FM-005 (sufficiency gate bypass) confirmed the hard state machine gate catches 100% of bypass attempts. TM-004 (verifier robustness) confirmed the LLM judge identifies errors in a deliberately bad assessment without being told what to look for. TM-001 (prompt injection) confirmed detection fires at the evidence layer — injection never reached agent reasoning state.
+These scenarios validate full agent trajectories — state transitions, tool invocations, PEP outcomes, and approval gate behavior — rather than single-turn prompt-response pairs. Key findings: FM-005 (sufficiency gate bypass) confirmed the hard state machine gate catches 100% of bypass attempts. TM-004 (verifier robustness) confirmed the LLM judge identifies errors in a deliberately bad assessment without being told what to look for. TM-001 (prompt injection) confirmed detection fires at the evidence layer — injection never reached agent reasoning state.
 
 Full report: [`eval/results/eval_report.md`](eval/results/eval_report.md)
 

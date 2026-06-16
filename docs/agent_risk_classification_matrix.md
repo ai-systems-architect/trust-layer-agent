@@ -29,7 +29,7 @@
 
 ## Tier Assignment Criteria
 
-A tool's risk tier is determined by the **worst-case failure impact** of that tool executing incorrectly or under adversarial conditions — not by its intended happy-path behavior.
+A tool's risk tier is determined by the **worst-case failure impact** of that tool executing incorrectly or under adversarial conditions — not by its intended happy-path behavior. Reversibility is a primary criterion — actions with no recovery path are assigned a higher tier regardless of intent.
 
 | Factor | Increases Tier |
 |---|---|

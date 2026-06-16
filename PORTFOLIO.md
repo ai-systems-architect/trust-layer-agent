@@ -122,7 +122,7 @@ All LLM calls currently route to the frontier model (claude-sonnet-4-5 via Bedro
 
 ## Evaluation Suite
 
-Three-tier evaluation methodology per `docs/framework_reference.md` Section 8.
+Three-tier evaluation methodology per `docs/framework_reference.md` Section 8. These scenarios validate full agent trajectories — state transitions, tool invocations, PEP outcomes, and approval gate behavior — rather than single-turn prompt-response pairs.
 
 **19/19 scenarios pass** across three tiers:
 

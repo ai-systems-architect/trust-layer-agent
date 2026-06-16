@@ -107,7 +107,7 @@ with real evidence (3–5× input token multiplier): **$23–$39 per run**.
 
 ## Evaluation Methodology
 
-Three-tier architecture per `docs/framework_reference.md` Section 8.
+Three-tier architecture per `docs/framework_reference.md` Section 8. These scenarios validate full agent trajectories — state transitions, tool invocations, PEP outcomes, and approval gate behavior — rather than single-turn prompt-response pairs.
 
 **Tier 1 — Deterministic Graders**
 Automated pass/fail assertions on observable binary outcomes.
