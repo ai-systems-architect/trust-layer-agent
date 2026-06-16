@@ -22,3 +22,10 @@ outputs/
 # IDE
 .vscode/
 .idea/
+
+# macOS
+.DS_Store
+
+# Local virtualenvs
+env/
+v/
