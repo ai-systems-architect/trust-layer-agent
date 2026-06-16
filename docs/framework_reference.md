@@ -895,6 +895,8 @@ This section maps framework components to the federal and enterprise regulatory 
 
 This mapping is not a compliance certification. It documents design intent and provides a starting point for program-specific ATO packages, AI use case inventories, and internal audit evidence.
 
+The 2026 interagency revision to model risk management guidance (SR 26-2) notes that generative and agentic AI systems are outside the formal scope of that document because they are novel and rapidly evolving. This reinforces the need for complementary governance frameworks that address autonomous behavior, tool use, and runtime controls beyond traditional model risk management.
+
 ---
 
 ### 9.2 NIST AI Risk Management Framework 1.0
