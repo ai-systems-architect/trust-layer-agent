@@ -1,6 +1,13 @@
 {
   "run_id": "R-1042",
   "agent_id": "ac-audit-agent-v1",
+  "declared_control_family": "AC",
+  "declared_account_scope": "123456789",
+  "policies_applied": [
+    "trust_ledger_v1.0",
+    "nist_800_53_rev5_ac_family",
+    "pep_enforcement_pre_post_call"
+  ],
   "execution_identity": {
     "iam_role": "audit-readonly-role",
     "credential_source": "short-lived-session"

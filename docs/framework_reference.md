@@ -1134,6 +1134,21 @@ These questions are documented in `FUTURE_WORK.md` and will be addressed in `tru
 
 ---
 
+### 10.6 Organizational Accountability Assignment
+
+Agentic AI systems cross traditional organizational boundaries. The technical responsibility matrix in Section 10.2 assigns platform vs. application controls. This section assigns organizational ownership of those controls — specifying which role holds accountability for each governance boundary.
+
+| Role | Accountability | Governance Boundary |
+|---|---|---|
+| Business / Process Owner | Establishes use case bounds, acceptable assessment thresholds, and control family scope | Declares run scope at invocation — control family, account ID, assessment criteria |
+| Data / Retrieval Owner | Governs P2 RAG corpus integrity — document ingestion, version control, and accuracy of NIST/FedRAMP requirement text | Knowledge boundary (Boundary 3) — what the agent may treat as authoritative |
+| Technology / Platform Owner | Inherits compute boundary, AWS Bedrock execution profile, IAM role provisioning, and observability infrastructure | Platform-layer controls per Section 10.2 — identity, network, encryption, availability |
+| Risk and Compliance Team | Designated Authorizing Official or Delegate — holds approval authority for HUMAN_GATED submission gate | Assertion boundary (Boundary 4) — no assessment artifact is released without explicit approval |
+
+**Why this matters for federal and regulated enterprise deployments:** An agent that crosses organizational boundaries without explicit ownership assignment creates accountability gaps. When a compliance assessment is approved, the Authorizing Official's identity is recorded in the governance decision artifact. When a corpus update changes the compliance requirement text, the Data Owner is accountable. The technical controls in this framework are only as strong as the organizational accountability structure that governs them.
+
+---
+
 ## 11. Deterministic vs. Probabilistic Orchestration
 
 ### 11.1 The Core Distinction

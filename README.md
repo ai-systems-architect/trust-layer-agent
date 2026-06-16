@@ -36,6 +36,8 @@ The answer has three components:
 2. A working LangGraph agent — the proof the framework works.
 3. A three-tier evaluation suite — deterministic graders, LLM-as-judge, and human review criteria.
 
+**Architectural Principle:** AI governance is achieved by constraining the paths an agent may execute, not by attempting to constrain the internal reasoning of the language model. The trust ledger, policy enforcement points, state machine transitions, and human approval gates define the bounded execution space within which probabilistic reasoning is permitted.
+
 ---
 
 ## The Problem

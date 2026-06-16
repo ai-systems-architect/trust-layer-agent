@@ -1,0 +1,125 @@
+{
+  "run_id": "5d3e845d-0394-4076-8d50-2bbe3e551ed2",
+  "agent_id": "ac-audit-agent-v1",
+  "declared_control_family": "AC",
+  "declared_account_scope": "123456789",
+  "policies_applied": [
+    "trust_ledger_v1.0",
+    "nist_800_53_rev5_ac_family",
+    "pep_enforcement_pre_post_call"
+  ],
+  "execution_identity": {
+    "iam_role": "audit-readonly-role",
+    "credential_source": "short-lived-session"
+  },
+  "tool_requested": "submit_assessment_artifact",
+  "risk_tier": "HIGH",
+  "autonomy_class": "HUMAN_GATED",
+  "approval_required": true,
+  "approval_status": "APPROVED",
+  "approver_role": "Authorizing Official or Delegate",
+  "approver_id": "ui-user",
+  "decision_timestamp": "2026-06-16T03:17:19.834297+00:00",
+  "controls_assessed": [
+    "AC-2",
+    "AC-3",
+    "AC-6",
+    "AC-17"
+  ],
+  "sufficiency_results": {
+    "AC-2": true,
+    "AC-3": true,
+    "AC-6": true,
+    "AC-17": true
+  },
+  "evidence_lineage": {
+    "AC-2": [
+      {
+        "source_uri": "fixtures://iam_policies/ac2_over_privileged_role.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.486195+00:00",
+        "evidence_hash": "320600d8c5e0e3a9...",
+        "tool_id": "T-001"
+      },
+      {
+        "source_uri": "fixtures://cloudtrail_events/ac2_dormant_credential.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.487407+00:00",
+        "evidence_hash": "689bf666a1899e45...",
+        "tool_id": "T-004"
+      },
+      {
+        "source_uri": "fixtures://cloudtrail_events/ac2_injection_attempt.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.487688+00:00",
+        "evidence_hash": "a3b116bab805073c...",
+        "tool_id": "T-004"
+      }
+    ],
+    "AC-3": [
+      {
+        "source_uri": "fixtures://iam_policies/ac3_missing_boundary_policy.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.486375+00:00",
+        "evidence_hash": "ee6f2d2c706edbd9...",
+        "tool_id": "T-001"
+      },
+      {
+        "source_uri": "fixtures://cloudtrail_events/ac3_unauthorized_access_attempt.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.487877+00:00",
+        "evidence_hash": "927f8ff5ff833cb3...",
+        "tool_id": "T-004"
+      },
+      {
+        "source_uri": "nist_800_53",
+        "retrieval_timestamp": "2026-06-16T03:09:43.019209+00:00",
+        "evidence_hash": "69e9ceebf47060f8...",
+        "tool_id": "T-005"
+      }
+    ],
+    "AC-6": [
+      {
+        "source_uri": "fixtures://iam_policies/ac6_wildcard_admin.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.486547+00:00",
+        "evidence_hash": "a4db0b7a3349019c...",
+        "tool_id": "T-001"
+      },
+      {
+        "source_uri": "fixtures://cloudtrail_events/ac6_privilege_escalation.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.488166+00:00",
+        "evidence_hash": "007ac958e5406ec9...",
+        "tool_id": "T-004"
+      },
+      {
+        "source_uri": "nist_800_53",
+        "retrieval_timestamp": "2026-06-16T03:09:43.864977+00:00",
+        "evidence_hash": "90d3af22b1ce464c...",
+        "tool_id": "T-005"
+      }
+    ],
+    "AC-17": [
+      {
+        "source_uri": "fixtures://iam_policies/ac17_remote_access_no_mfa.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.485598+00:00",
+        "evidence_hash": "5c237cf82659d42a...",
+        "tool_id": "T-001"
+      },
+      {
+        "source_uri": "fixtures://iam_policies/ac17_remote_access_with_mfa.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.485882+00:00",
+        "evidence_hash": "5d0a753631511cda...",
+        "tool_id": "T-001"
+      },
+      {
+        "source_uri": "fixtures://cloudtrail_events/ac17_remote_session_no_mfa.json",
+        "retrieval_timestamp": "2026-06-16T03:09:39.486928+00:00",
+        "evidence_hash": "6326295d9b0e415c...",
+        "tool_id": "T-004"
+      }
+    ]
+  },
+  "pep_outcomes": {
+    "total_outcomes": 37,
+    "passed": 37,
+    "failed": 0
+  },
+  "draft_timestamp": "2026-06-16T03:11:15.946877+00:00",
+  "iteration_count": 4,
+  "errors_recorded": 0
+}

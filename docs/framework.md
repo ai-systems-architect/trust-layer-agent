@@ -12,6 +12,8 @@
 
 This framework specifies how to govern an agentic AI system — one that doesn't just answer questions but takes actions: querying systems, assembling evidence, generating assessments, submitting artifacts across multiple autonomous steps.
 
+**Architectural Principle:** AI governance is achieved by constraining the paths an agent may execute, not by attempting to constrain the internal reasoning of the language model. The trust ledger, policy enforcement points, state machine transitions, and human approval gates define the bounded execution space within which probabilistic reasoning is permitted.
+
 The governance question is not whether the agent can do these things. It is whether it is authorized to, under what conditions, with what constraints, and with what audit trail.
 
 This document answers that question in plain terms. The reference document answers it in specification terms.
