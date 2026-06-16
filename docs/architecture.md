@@ -251,6 +251,77 @@ Current result: 19/19 pass.
 
 ---
 
+## Scaling
+
+The agent's design properties determine its scaling characteristics at the application
+layer. Infrastructure scaling (multi-AZ deployment, auto-scaling, load balancing) is
+platform-layer responsibility per the inheritance pattern (`framework_reference.md`
+Section 10).
+
+**Horizontal scaling is trivial by design.** Agent runs are stateless and ephemeral
+(DL-036). Each run is keyed by a unique `run_id` with no shared state across runs.
+Multiple agent workers can process different runs simultaneously with no coordination —
+each run is fully independent from planning through `awaiting_human_review`.
+
+**Per-run cost and blast radius are bounded.** Circuit breakers (`MAX_ITERATIONS=50`,
+`MAX_EVIDENCE_RETRIES=3`), per-tool `max_calls_per_run` ceilings, and per-tool
+`timeout_seconds` enforce hard upper bounds on what any single run can consume. At $0.024
+per control assessed, 100 concurrent runs processing a full FedRAMP Moderate baseline cost
+approximately $780 in model inference — and each run's blast radius is independent.
+
+**At scale, the bottleneck is governance artifact storage and the P2 dependency — not
+agent compute.** Every run writes `governance_decision_{run_id}.json` and
+`draft_assessment_{run_id}.md` to `outputs/`. At volume, `outputs/` requires a managed
+store (S3 with lifecycle policies) rather than local filesystem. T-005 calls P2
+synchronously — under concurrent load, P2's retrieval pipeline is the shared dependency.
+`ThreadedConnectionPool` for P2's pgvector connection is documented in
+`trust-layer-rag/docs/future_enhancements.md` (Connection Pooling for Concurrent Load)
+as the production fix.
+
+**Breadth scaling** (extending from AC family to AU, IA, CM families) follows the same
+pattern per the framework — register new fixtures, confirm retrieval works for the new
+control family, the governance layer is unchanged. Documented in `FUTURE_WORK.md` under
+Stretch.
+
+---
+
+## Portability
+
+The governance core — trust ledger, PEP enforcement, state machine, evaluation suite — is
+cloud-agnostic. The AWS-specific components are isolated in two layers and are replaceable
+without touching governance logic.
+
+**Model layer** (`src/agent/llm.py`): Currently calls Claude Sonnet via AWS Bedrock.
+Replaceable with:
+- Anthropic API directly — same model, no Bedrock dependency
+- GCP Vertex AI — Claude is available via Vertex AI Model Garden
+- Azure AI Foundry — Claude is available via Microsoft Foundry
+
+One file change. No governance logic changes.
+
+**Evidence domain tools** (`src/tools/`): Currently queries AWS IAM and CloudTrail
+fixtures. Production equivalents by cloud:
+
+| Evidence Type | AWS | GCP | Azure |
+|---|---|---|---|
+| Identity policies | IAM Policy documents | IAM Policy bindings | RBAC role assignments |
+| Audit events | CloudTrail | Cloud Audit Logs | Activity Log |
+| Tool registration | trust_ledger.yaml | Same ledger, new tool_id | Same ledger, new tool_id |
+
+The trust ledger registers new tools with the same autonomy class, risk tier, and PEP
+handlers. The governance layer is identical — only the tool implementations change.
+
+**P2 integration** (`src/tools/lookup_compliance_requirement.py`): Calls trust-layer-rag
+FastAPI endpoint. The NIST compliance corpus and retrieval governance pattern are
+cloud-agnostic — P2 runs wherever pgvector is available (RDS, Cloud SQL, Azure Database
+for PostgreSQL).
+
+The governance core transfers across cloud platforms because it is implemented at the
+application layer — in the trust ledger schema, the PEP enforcement code, and the state
+machine structure — not in any cloud-specific service.
+
+---
+
 ## Regulatory Alignment
 
 | Framework | Coverage |
