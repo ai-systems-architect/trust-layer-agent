@@ -100,6 +100,8 @@ Three tiers are complete: governance framework, working agent, and evaluation su
 
 ### System Architecture
 
+![Trust Layer RAG and Agent Architecture](docs/screenshots/governed-agent-diagram.png)
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Streamlit UI  (:8501)                       │

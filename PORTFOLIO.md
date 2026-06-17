@@ -50,6 +50,8 @@ Three artifacts are the foundation:
 
 ## Agent Architecture
 
+![Architecture](docs/screenshots/governed-agent-diagram.png)
+
 ```
 ┌─────────────┐
 │   planning  │  Validates scope, initializes evidence buckets

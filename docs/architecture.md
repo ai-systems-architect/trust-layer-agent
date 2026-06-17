@@ -7,6 +7,8 @@ portfolio. It demonstrates governed agentic AI for federal compliance workflows 
 agent instrumented against a governance framework that enforces tool permissions, evidence
 lineage, and human oversight at the state machine level.
 
+> Architecture diagram: see `docs/screenshots/governed-agent-diagram.png`
+
 ---
 
 ## System Components
