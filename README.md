@@ -270,6 +270,10 @@ Complete and verified end to end — governance framework, LangGraph agent with 
 | ![Governance Decision](docs/screenshots/screenshot-03-governance-decision-panel.png) | ![Approved State](docs/screenshots/screenshot-04-approved-state.png) |
 | Governance decision panel — 37 PEP outcomes | Assessment approved — artifact released |
 
+### Approval Gate Demo
+
+![Approval Gate](docs/screenshots/approval-gate-demo.gif)
+
 ---
 
 ## Quickstart
