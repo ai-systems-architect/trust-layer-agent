@@ -1,4 +1,4 @@
-# Architecture — trust-layer-agent
+# System Architecture — The Trust Layer for Enterprise Agentic AI
 
 ## Overview
 
