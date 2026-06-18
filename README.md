@@ -151,8 +151,8 @@ Output artifacts (outputs/):
                   │  2. Autonomy class?          │ DENIED → reject immediately
                   │  3. Scope bounds valid?      │ HUMAN_GATED → require approval token
                   │  4. Call count < max?        │ NO  → circuit breaker
-                  │  5. Prohibited action?       │ YES → DENIED + alert
-                  │  6. Data classification OK?  │ NO  → DENIED
+                  │  5. Prohibited action?       │ trust ledger enforced (production: scan args)
+                  │  6. Data classification OK?  │ trust ledger enforced (production: classify input)
                   └─────────────┬───────────────┘
                                 │ ALL 6 PASS
                                 ▼
@@ -163,9 +163,9 @@ Output artifacts (outputs/):
                   │    PEP-2: Post-Call          │
                   │    Sanitization              │
                   │  1. Evidence lineage valid?  │ NO  → strip + flag
-                  │  2. PII detected?            │ YES → redact
-                  │  3. Injection pattern?       │ YES → sanitize + flag
-                  │  4. Result size OK?          │ NO  → truncate
+                  │  2. Injection pattern?       │ YES → sanitize + flag
+                  │  3. PII scan                 │ production extension — see FUTURE_WORK.md
+                  │  4. Result size check        │ production extension — see FUTURE_WORK.md
                   └─────────────┬───────────────┘
                                 │ ALL 4 PASS
                                 ▼
@@ -283,6 +283,12 @@ Complete and verified end to end — governance framework, LangGraph agent with 
 Requires Python 3.9+, AWS credentials with Bedrock access, and a Langfuse cloud account (us.cloud.langfuse.com).
 
 ```bash
+# 0. Start P2 — trust-layer-rag must be running on :8000
+#    T-005 calls the P2 governed retrieval API for compliance requirement text.
+#    Without P2, T-005 degrades gracefully per FM-002 but the circuit breaker
+#    will fire for most controls. See DL-038 for documented behavior.
+#    cd ../trust-layer-rag && bash scripts/run_api.sh
+
 # 1. Install
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
