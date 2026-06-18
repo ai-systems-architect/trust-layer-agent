@@ -44,7 +44,7 @@ Three artifacts are the foundation:
 
 **Risk Classification Matrix** (`docs/agent_risk_classification_matrix.md`) — four tiers (Low → Critical) mapping autonomy class, human approval requirements, failure impact, and logging requirements.
 
-**Governance Decision Schema** (`docs/examples/governance_decision.json`) — runtime artifact capturing tool request, approval status, evidence lineage, and PEP outcomes per agent run.
+**Governance Decision Schema** (`docs/examples/governance_decision.json`) — runtime artifact capturing tool request, approval status, evidence lineage, and Policy Enforcement Point (PEP) outcomes per agent run.
 
 ---
 

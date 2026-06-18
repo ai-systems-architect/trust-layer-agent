@@ -23,7 +23,7 @@
 |---|---|
 | `AUTONOMOUS` | Agent executes without pause. Output may still be flagged for human review depending on `human_review_required` in the tool entry. |
 | `HUMAN_GATED` | Execution is blocked until an explicit approval token is received from a qualified approver. No fallback execution path. |
-| `DENIED` | Execution is rejected at the pre-call PEP gate regardless of context. Attempt is logged and alerted. Run terminates. |
+| `DENIED` | Execution is rejected at the pre-call Policy Enforcement Point (PEP) gate regardless of context. Attempt is logged and alerted. Run terminates. |
 
 ---
 

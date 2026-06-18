@@ -53,7 +53,7 @@ Three artifacts are complete. The governance framework specifies every rule befo
 A reviewer asks the agent to assess an AC-family control. The agent *plans* the evidence
 it needs, then *gathers* it by calling three read-only tools — IAM policies (T-001),
 CloudTrail events (T-004), and compliance requirements from P2's RAG service (T-005) —
-with every call validated by PEP-1 before execution and sanitized by PEP-2 after. It then
+with every call validated by a Policy Enforcement Point (PEP-1) before execution and sanitized by PEP-2 after. It then
 *assesses sufficiency*: if the evidence is incomplete it loops back to gather more, and if
 it can never reach sufficiency a circuit breaker fires. Once sufficient, it *drafts* a
 cited compliance assessment with a frontier model. The draft does **not** auto-submit —

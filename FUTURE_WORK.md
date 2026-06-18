@@ -12,7 +12,7 @@ Scope deliberately deferred from this project. Each item below is documented to 
 
 **Langfuse self-hosted for production.** Portfolio implementation uses Langfuse cloud Hobby tier with synthetic data only. Production deployments handling real federal data require self-hosted Langfuse to satisfy data residency and FedRAMP boundary requirements. Migration is a configuration change — the SDK and instrumentation code are identical between cloud and self-hosted.
 
-**Cryptographic scope invariant checker.** PEP-1 validates declared_control_family and declared_account_id on every tool invocation. A stronger production hardening step is a cryptographic invariant checker that hashes the scope parameters at run initiation and validates the hash at every LangGraph node transition — detecting any mutation of scope within a run regardless of cause. Documented as DL-041. Trigger: before deployment into a real ATO boundary.
+**Cryptographic scope invariant checker.** The pre-call Policy Enforcement Point (PEP-1) validates declared_control_family and declared_account_id on every tool invocation. A stronger production hardening step is a cryptographic invariant checker that hashes the scope parameters at run initiation and validates the hash at every LangGraph node transition — detecting any mutation of scope within a run regardless of cause. Documented as DL-041. Trigger: before deployment into a real ATO boundary.
 
 ---
 

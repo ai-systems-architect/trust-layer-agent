@@ -13,7 +13,7 @@ lineage, and human oversight at the state machine level.
 
 ## System Components
 
-*The Streamlit UI drives the agent, which governs five tools, calls P2's retrieval API over HTTP, and traces every node to Langfuse.*
+*The Streamlit UI drives the agent, which governs five tools through Policy Enforcement Point (PEP) rules, calls P2's retrieval API over HTTP, and traces every node to Langfuse.*
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
