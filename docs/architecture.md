@@ -13,6 +13,8 @@ lineage, and human oversight at the state machine level.
 
 ## System Components
 
+*The Streamlit UI drives the agent, which governs five tools, calls P2's retrieval API over HTTP, and traces every node to Langfuse.*
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                     Streamlit UI  (:8501)                       │
@@ -54,6 +56,8 @@ Output artifacts (outputs/):
 
 ## Agent State Machine
 
+*Six states with a hard human-review gate before any artifact is released. Rejection loops back to drafting with the reason injected.*
+
 ```
 ┌─────────────┐
 │   planning  │  Validates scope, initializes evidence buckets
@@ -92,6 +96,8 @@ State is ephemeral per run (DL-036). No state persists across agent invocations.
 ---
 
 ## Policy Enforcement Points
+
+*Two enforcement gates wrap every tool call: PEP-1 before execution, PEP-2 after.*
 
 ```
                     Agent decides to invoke tool

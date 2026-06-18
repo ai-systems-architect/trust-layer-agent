@@ -50,6 +50,8 @@ Three artifacts are the foundation:
 
 ## Agent Architecture
 
+*Six-state LangGraph machine with a hard human-review gate before any artifact is released. Rejection loops back to drafting with the reason injected.*
+
 ![Architecture](docs/screenshots/governed-agent-diagram.png)
 
 ```
