@@ -16,6 +16,8 @@ Scope deliberately deferred from this project. Each item below is documented to 
 
 **Per-tool token budget.** The trust ledger enforces a per-tool `max_calls_per_run` at PEP-1 but has no per-call token budget. Add a `token_budget_per_call` field to the trust ledger schema, enforced alongside `max_calls_per_run` at PEP-1, to cap the token cost any single tool invocation may incur. This field feeds the Orchestration Contract consumed by `trust-layer-multiagent` (P4) for cross-agent cost governance. Trigger: P4 orchestration design.
 
+**Agent behavior versioning and staged rollout.** The 19/19 evaluation suite validates correctness at a point in time but does not address what happens when the trust ledger schema, a prompt template, or the LangGraph state machine topology changes. Unlike P1's model versioning — which tracks a trained artifact — this requires versioning *behavior*: the combination of graph structure, tool registration, and prompt content that determines what the agent decides. A production deployment needs a staging step before any such change reaches the live path, plus a rollback path if a change shifts agent decisions in ways the eval suite did not anticipate. Distinct problem from MLOps model versioning (P1) — same governance discipline, different artifact. Trigger: before any framework change ships to a live deployment with real evidence.
+
 ---
 
 ### Stretch
