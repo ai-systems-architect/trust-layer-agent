@@ -66,6 +66,8 @@ Three tiers are complete: governance framework, working agent, and evaluation su
 
 ### Agent State Machine
 
+*Six states with a hard human-review gate before any artifact is released. Rejection loops back to drafting with the reason injected.*
+
 ```
 ┌─────────────┐
 │   planning  │  Validates scope, initializes evidence buckets
@@ -99,6 +101,8 @@ Three tiers are complete: governance framework, working agent, and evaluation su
 ```
 
 ### System Architecture
+
+*High-level view (above) and component detail (below) — the agent governs five tools, calls P2's retrieval API over HTTP, and traces every node to Langfuse.*
 
 ![Trust Layer RAG and Agent Architecture](docs/screenshots/governed-agent-diagram.png)
 
@@ -140,6 +144,8 @@ Output artifacts (outputs/):
 ```
 
 ### Policy Enforcement Points
+
+*Two enforcement gates wrap every tool call: PEP-1 before execution, PEP-2 after.*
 
 ```
                     Agent decides to invoke tool
