@@ -90,6 +90,14 @@ Output artifacts (outputs/):
                         └───────────────────────────────┘
 ```
 
+The sufficiency gate is enforced as a hard state machine constraint, not a self-assessed
+LLM check. A model that owns its own verifier makes that verifier the most fragile part of
+the system — it can appear to improve while quietly degrading. The LLM grades evidence
+inside `sufficiency_assessment`, but the `route_sufficiency` edge enforces the threshold
+deterministically: the agent cannot grade its own evidence and proceed. This is the
+architectural answer to the fragile-verifier problem (see Section 11 of
+`framework_reference.md`).
+
 State is ephemeral per run (DL-036). No state persists across agent invocations. The
 `run_id` is the only durable identifier; all artifacts are keyed to it.
 

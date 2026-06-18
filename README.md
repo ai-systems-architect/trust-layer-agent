@@ -100,6 +100,8 @@ Three tiers are complete: governance framework, working agent, and evaluation su
                         └────────────────────────────┘
 ```
 
+The sufficiency gate is enforced as a hard state machine constraint, not a self-assessed LLM check. A model that owns its own verifier makes that verifier the most fragile part of the system — it can appear to improve while quietly degrading. The agent grades evidence inside the node, but a deterministic routing edge enforces the threshold: it cannot grade its own evidence and proceed.
+
 ### System Architecture
 
 *High-level view (above) and component detail (below) — the agent governs five tools, calls P2's retrieval API over HTTP, and traces every node to Langfuse.*
