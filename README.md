@@ -17,10 +17,10 @@ This is a production-grade governance pattern implemented against synthetic data
 
 | Dimension | This Implementation | Production Requirement |
 |---|---|---|
-| Data | Synthetic IAM + CloudTrail fixtures | Real AWS telemetry with data handling agreements |
-| Identity | Application-layer declaration; no real STS | Real IAM role + STS short-lived session |
+| Data | Synthetic IAM (Identity and Access Management) + CloudTrail fixtures | Real AWS telemetry with data handling agreements |
+| Identity | Application-layer declaration; no real STS (Security Token Service) | Real IAM role + STS short-lived session |
 | Observability | Langfuse Cloud Hobby (synthetic traces only) | Self-hosted Langfuse within FedRAMP boundary |
-| ATO | Not applicable — reference implementation | Program-level ATO with FedRAMP-aligned infrastructure |
+| ATO (Authority to Operate) | Not applicable — reference implementation | Program-level ATO with FedRAMP-aligned infrastructure |
 
 Federal alignment is pattern-based. Actual deployment into an ATO boundary requires FedRAMP-aligned infrastructure and program-level authority to operate. Production extension paths are documented in `FUTURE_WORK.md`.
 
@@ -52,7 +52,7 @@ Three artifacts are complete. The governance framework specifies every rule befo
 
 A reviewer asks the agent to assess an AC-family control. The agent *plans* the evidence
 it needs, then *gathers* it by calling three read-only tools — IAM policies (T-001),
-CloudTrail events (T-004), and compliance requirements from P2's RAG service (T-005) —
+CloudTrail events (T-004), and compliance requirements from P2's RAG (Retrieval-Augmented Generation) service (T-005) —
 with every call validated by a Policy Enforcement Point (PEP-1) before execution and sanitized by PEP-2 after. It then
 *assesses sufficiency*: if the evidence is incomplete it loops back to gather more, and if
 it can never reach sufficiency a circuit breaker fires. Once sufficient, it *drafts* a

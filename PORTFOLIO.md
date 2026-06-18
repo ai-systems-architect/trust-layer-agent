@@ -38,7 +38,7 @@ Three artifacts are the foundation:
 |---|---|---|---|
 | T-001 query_iam_policies | LOW | AUTONOMOUS | Read IAM policy documents |
 | T-004 search_cloudtrail_events | LOW | AUTONOMOUS | Search CloudTrail records |
-| T-005 lookup_compliance_requirement | LOW | AUTONOMOUS | Retrieve NIST text from P2 RAG |
+| T-005 lookup_compliance_requirement | LOW | AUTONOMOUS | Retrieve NIST text from P2 RAG (Retrieval-Augmented Generation) |
 | T-002 submit_assessment_artifact | HIGH | HUMAN_GATED | Write assessment to output store |
 | T-003 modify_iam_policy | CRITICAL | DENIED | Authority-modifying write — blocked at gate |
 
@@ -177,7 +177,7 @@ Full regulatory mapping: `docs/framework_reference.md` Section 9
 ## Regulatory Alignment
 
 NIST AI RMF 1.0 · NIST AI 600-1 · NIST 800-53 Rev 5
-OMB M-24-10 / M-25-21 · FedRAMP ConMon · OWASP LLM Top 10
+OMB M-24-10 / M-25-21 · FedRAMP ConMon (Continuous Monitoring) · OWASP LLM Top 10
 
 ---
 

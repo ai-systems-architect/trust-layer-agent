@@ -143,7 +143,7 @@ Full specification: [Section 8 of framework_reference.md](framework_reference.md
 
 No agent operates in isolation. Platform controls (IAM, network, credential management, infrastructure logging) and application controls (trust ledger, PEPs, reasoning trace, evidence lineage) are distinct layers. Conflating them produces either over-claiming or under-delivering.
 
-This framework is Layer 3 in a four-layer governance stack. It consumes Layer 2 (governed RAG) as a service and will be consumed by Layer 4 (multi-agent orchestration) in the same pattern.
+This framework is Layer 3 in a four-layer governance stack. It consumes Layer 2 (governed RAG — Retrieval-Augmented Generation) as a service and will be consumed by Layer 4 (multi-agent orchestration) in the same pattern.
 
 Full specification: [Section 10 of framework_reference.md](framework_reference.md#10-inheritance-pattern)
 
