@@ -14,6 +14,8 @@ Scope deliberately deferred from this project. Each item below is documented to 
 
 **Cryptographic scope invariant checker.** The pre-call Policy Enforcement Point (PEP-1) validates declared_control_family and declared_account_id on every tool invocation. A stronger production hardening step is a cryptographic invariant checker that hashes the scope parameters at run initiation and validates the hash at every LangGraph node transition — detecting any mutation of scope within a run regardless of cause. Documented as DL-041. Trigger: before deployment into a real ATO boundary.
 
+**Per-tool token budget.** The trust ledger enforces a per-tool `max_calls_per_run` at PEP-1 but has no per-call token budget. Add a `token_budget_per_call` field to the trust ledger schema, enforced alongside `max_calls_per_run` at PEP-1, to cap the token cost any single tool invocation may incur. This field feeds the Orchestration Contract consumed by `trust-layer-multiagent` (P4) for cross-agent cost governance. Trigger: P4 orchestration design.
+
 ---
 
 ### Stretch
